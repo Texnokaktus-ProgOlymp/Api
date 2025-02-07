@@ -21,4 +21,8 @@
         <PackageReference Include="Texnokaktus.ProgOlymp.OpenTelemetry" Version="1.5.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.DataAccess\Texnokaktus.ProgOlymp.Api.DataAccess.csproj" />
+    </ItemGroup>
+
 </Project>
