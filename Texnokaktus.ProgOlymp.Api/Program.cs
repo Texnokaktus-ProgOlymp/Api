@@ -38,7 +38,7 @@ builder.Services
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddTexnokaktusOpenTelemetry(builder.Configuration, "ContestService", null, null);
+builder.Services.AddTexnokaktusOpenTelemetry(builder.Configuration, "API", null, null);
 
 builder.Services
        .AddDataProtection(options => options.ApplicationDiscriminator = Assembly.GetEntryAssembly()?.GetName().Name)
