@@ -1,9 +1,13 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using StackExchange.Redis;
 using Texnokaktus.ProgOlymp.Api.Converters;
+using Texnokaktus.ProgOlymp.Api.DataAccess;
+using Texnokaktus.ProgOlymp.Api.Infrastructure;
+using Texnokaktus.ProgOlymp.Api.Logic;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);

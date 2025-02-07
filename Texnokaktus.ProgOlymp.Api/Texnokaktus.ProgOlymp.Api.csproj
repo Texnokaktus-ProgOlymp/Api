@@ -23,6 +23,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.DataAccess\Texnokaktus.ProgOlymp.Api.DataAccess.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.Logic\Texnokaktus.ProgOlymp.Api.Logic.csproj" />
     </ItemGroup>
 
 </Project>
