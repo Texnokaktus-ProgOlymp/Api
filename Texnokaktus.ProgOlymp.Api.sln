@@ -10,6 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Texnokaktus.ProgOlymp.Commo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Texnokaktus.ProgOlymp.Api.Infrastructure", "Texnokaktus.ProgOlymp.Api.Infrastructure\Texnokaktus.ProgOlymp.Api.Infrastructure.csproj", "{847D6103-B387-43F8-8D05-C868AC5B98FA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Texnokaktus.ProgOlymp.Api.Domain", "Texnokaktus.ProgOlymp.Api.Domain\Texnokaktus.ProgOlymp.Api.Domain.csproj", "{ECEF01B3-354E-42C2-8BA7-D9B3E861EFFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Texnokaktus.ProgOlymp.Api.Logic", "Texnokaktus.ProgOlymp.Api.Logic\Texnokaktus.ProgOlymp.Api.Logic.csproj", "{F754BFB5-33C4-4CB9-9A77-121B97529998}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{847D6103-B387-43F8-8D05-C868AC5B98FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{847D6103-B387-43F8-8D05-C868AC5B98FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{847D6103-B387-43F8-8D05-C868AC5B98FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECEF01B3-354E-42C2-8BA7-D9B3E861EFFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECEF01B3-354E-42C2-8BA7-D9B3E861EFFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECEF01B3-354E-42C2-8BA7-D9B3E861EFFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECEF01B3-354E-42C2-8BA7-D9B3E861EFFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F754BFB5-33C4-4CB9-9A77-121B97529998}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F754BFB5-33C4-4CB9-9A77-121B97529998}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F754BFB5-33C4-4CB9-9A77-121B97529998}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F754BFB5-33C4-4CB9-9A77-121B97529998}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4928008D-7DA6-44A1-8899-81F9BCCCC992} = {39285142-D127-4039-967A-A0141BFF96CF}

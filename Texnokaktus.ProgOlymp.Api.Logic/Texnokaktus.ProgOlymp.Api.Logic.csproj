@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.DataAccess\Texnokaktus.ProgOlymp.Api.DataAccess.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.Domain\Texnokaktus.ProgOlymp.Api.Domain.csproj" />
+      <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.Infrastructure\Texnokaktus.ProgOlymp.Api.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Scrutor" Version="6.0.1" />
+    </ItemGroup>
+
+</Project>
