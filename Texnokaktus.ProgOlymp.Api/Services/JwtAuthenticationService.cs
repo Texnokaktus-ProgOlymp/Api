@@ -4,24 +4,24 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Texnokaktus.ProgOlymp.Api.Extensions;
-using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
 
 namespace Texnokaktus.ProgOlymp.Api.Services;
 
 using IAuthenticationService = Abstractions.IAuthenticationService;
 
-public class JwtAuthenticationService(IYandexIdUserServiceClient yandexIdUserServiceClient,
+public class JwtAuthenticationService(IUserService userService,
                                       IOptions<JwtSettings> jwtSettings,
                                       TimeProvider timeProvider) : IAuthenticationService
 {
     public async Task<Ok<TokenModel>> AuthenticateUserAsync(HttpContext context, string code)
     {
-        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
+        var user = await userService.AuthenticateUserAsync(code);
         
         var claims = new Claim[]
         {
-            new(ClaimTypes.NameIdentifier, 0.ToString()),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Login)
         };
 
@@ -43,6 +43,6 @@ public class JwtAuthenticationService(IYandexIdUserServiceClient yandexIdUserSer
                                               expiration,
                                               new(user.Login,
                                                   user.DisplayName,
-                                                  user.Avatar?.AvatarId)));
+                                                  user.DefaultAvatar)));
     }
 }

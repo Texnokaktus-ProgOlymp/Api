@@ -1,17 +1,12 @@
 using System.Reflection;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using StackExchange.Redis;
 using Texnokaktus.ProgOlymp.Api.Converters;
 using Texnokaktus.ProgOlymp.Api.DataAccess;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
