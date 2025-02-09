@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,6 +26,12 @@
     <ItemGroup>
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.DataAccess\Texnokaktus.ProgOlymp.Api.DataAccess.csproj" />
       <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.Logic\Texnokaktus.ProgOlymp.Api.Logic.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
 </Project>
