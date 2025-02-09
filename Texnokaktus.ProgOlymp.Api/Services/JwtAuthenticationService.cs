@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
+using Texnokaktus.ProgOlymp.Api.Settings;
 
 namespace Texnokaktus.ProgOlymp.Api.Services;
 

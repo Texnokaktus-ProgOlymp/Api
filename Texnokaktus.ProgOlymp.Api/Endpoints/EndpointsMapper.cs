@@ -10,7 +10,7 @@ internal static class EndpointsMapper
 {
     public static IEndpointRouteBuilder MapContestEndpoints(this IEndpointRouteBuilder builder)
     {
-        var group = builder.MapGroup("api/contests");
+        var group = builder.MapGroup("contests");
 
         group.MapGet("{contestId:int}", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
 

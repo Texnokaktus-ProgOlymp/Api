@@ -11,6 +11,7 @@ using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
+using Texnokaktus.ProgOlymp.Api.Settings;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);

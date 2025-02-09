@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
+using Texnokaktus.ProgOlymp.Api.Settings;
 
 namespace Texnokaktus.ProgOlymp.Api.Extensions;
 
@@ -21,12 +22,4 @@ internal static class SecurityExtensions
             };
         });
     }
-}
-
-public class JwtSettings
-{
-    public string ClaimsIssuer { get; init; }
-    public string Audience { get; init; }
-    public string IssuerSigningKey { get; init; }
-    public TimeSpan Validity { get; init; }
 }
