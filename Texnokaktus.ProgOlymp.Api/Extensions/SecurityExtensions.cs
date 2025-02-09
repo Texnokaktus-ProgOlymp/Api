@@ -13,10 +13,10 @@ internal static class SecurityExtensions
 
         return builder.AddJwtBearer(options =>
         {
-            options.ClaimsIssuer = jwtSettings.ClaimsIssuer;
-            options.Audience = jwtSettings.Audience;
             options.TokenValidationParameters = new()
             {
+                ValidIssuer = jwtSettings.ClaimsIssuer,
+                ValidAudience = jwtSettings.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(jwtSettings.IssuerSigningKey))
             };
         });
