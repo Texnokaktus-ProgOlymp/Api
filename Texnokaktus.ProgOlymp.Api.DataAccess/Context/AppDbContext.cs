@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ContestStage> ContestStages { get; set; }
     public DbSet<Region> Regions { get; set; }
     public DbSet<Application> Applications { get; set; }
+    public DbSet<User> Users { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,18 +53,29 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         {
             builder.HasKey(application => application.Id);
 
-            builder.HasAlternateKey(application => new { application.ContestId, application.YandexIdLogin });
+            builder.HasAlternateKey(application => new { application.ContestId, application.UserId });
 
-            builder.HasOne(application => application.Region)
+            builder.HasOne(application => application.User)
                    .WithMany()
-                   .HasForeignKey(application => application.RegionId);
+                   .HasForeignKey(application => application.UserId);
 
             builder.HasOne(application => application.Contest)
                    .WithMany()
                    .HasForeignKey(application => application.ContestId);
 
+            builder.HasOne(application => application.Region)
+                   .WithMany()
+                   .HasForeignKey(application => application.RegionId);
+
             builder.OwnsOne<ThirdPerson>(application => application.Parent);
             builder.OwnsOne<Teacher>(application => application.Teacher);
+        });
+
+        modelBuilder.Entity<User>(builder =>
+        {
+            builder.HasKey(user => user.Id);
+
+            builder.HasAlternateKey(user => user.Login);
         });
         
         base.OnModelCreating(modelBuilder);

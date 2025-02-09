@@ -6,6 +6,6 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories.Abstractions;
 
 public interface IApplicationRepository
 {
-    Application Add(UserInsertModel insertModel);
+    Application Add(ApplicationInsertModel insertModel);
     Task<bool> ExistsAsync(Expression<Func<Application, bool>> predicate);
 }

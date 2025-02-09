@@ -1,60 +1,43 @@
 using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
-using Texnokaktus.ProgOlymp.Api.Logic.Models;
+using Texnokaktus.ProgOlymp.Api.Domain;
+using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class UserService(IUnitOfWork unitOfWork, IRegistrationService registrationService) : IUserService
+public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient) : IUserService
 {
-    public Task<bool> IsUserRegisteredAsync(int contestId, string login) =>
-        unitOfWork.ApplicationRepository.ExistsAsync(application => application.ContestId == contestId
-                                                                 && application.YandexIdLogin == login);
-
-    public async Task<int> RegisterUserAsync(UserInsertModel userInsertModel)
+    public async Task<User?> GetByIdAsync(int id)
     {
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel());
+        var user = await unitOfWork.UserRepository.GetUserByIdAsync(id);
+        return user?.MapUser();
+    }
 
-        if (await unitOfWork.SaveChangesAsync() > 0)
-            await registrationService.RegisterUserToPreliminaryStageAsync(userInsertModel.ContestId,
-                                                                          userInsertModel.YandexIdLogin,
-                                                                          userInsertModel.YandexIdLogin);
+    public async Task<User> AuthenticateUserAsync(string code)
+    {
+        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
+        var dbUser = await ConvertToDbUserAsync(user);
+        await unitOfWork.SaveChangesAsync();
 
-        return entity.Id;
+        return dbUser.MapUser();
+    }
+
+    private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User user)
+    {
+        if (await unitOfWork.UserRepository.GetUserByLoginAsync(user.Login) is not { } dbUser)
+            return unitOfWork.UserRepository.AddUser(new(user.Login, user.DisplayName, user.Avatar?.AvatarId));
+
+        dbUser.DisplayName = user.DisplayName;
+        dbUser.DefaultAvatar = user.Avatar?.AvatarId;
+        return dbUser;
     }
 }
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.UserInsertModel MapUserInsertModel(this UserInsertModel userInsertModel) =>
-        new(userInsertModel.ContestId,
-            userInsertModel.YandexIdLogin,
-            userInsertModel.Name.MapName(),
-            userInsertModel.BirthDate,
-            userInsertModel.Snils,
-            userInsertModel.Email,
-            userInsertModel.SchoolName,
-            userInsertModel.RegionId,
-            userInsertModel.Parent.MapThirdPerson(),
-            userInsertModel.Teacher.MapTeacher(),
-            userInsertModel.PersonalDataConsent,
-            userInsertModel.Grade);
-    
-    private static DataAccess.Models.Teacher MapTeacher(this Teacher teacher)
-    {
-        var thirdPerson = teacher.MapThirdPerson();
-        return new(thirdPerson.Name,
-                   thirdPerson.Email,
-                   thirdPerson.Phone,
-                   teacher.School);
-    }
-    
-    private static DataAccess.Models.ThirdPerson MapThirdPerson(this Models.ThirdPerson thirdPerson) =>
-        new(thirdPerson.Name.MapName(),
-            thirdPerson.Email,
-            thirdPerson.Phone);
-    
-    private static DataAccess.Models.Name MapName(this Name name) =>
-        new(name.FirstName,
-            name.LastName,
-            name.Patronym);
+    public static User MapUser(this DataAccess.Entities.User user) =>
+        new(user.Id,
+            user.Login,
+            user.DisplayName,
+            user.DefaultAvatar);
 }

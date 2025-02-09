@@ -9,10 +9,11 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories;
 
 public class ApplicationRepository(AppDbContext context) : IApplicationRepository
 {
-    public Application Add(UserInsertModel insertModel)
+    public Application Add(ApplicationInsertModel insertModel)
     {
         var entity = new Application
         {
+            UserId = insertModel.UserId,
             ContestId = insertModel.ContestId,
             FirstName = insertModel.Name.FirstName,
             LastName = insertModel.Name.LastName,
@@ -20,7 +21,6 @@ public class ApplicationRepository(AppDbContext context) : IApplicationRepositor
             BirthDate = insertModel.BirthDate,
             Snils = insertModel.Snils,
             Email = insertModel.Email,
-            YandexIdLogin = insertModel.YandexIdLogin,
             SchoolName = insertModel.SchoolName,
             RegionId = insertModel.RegionId,
             Parent = new()

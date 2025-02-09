@@ -1,16 +1,20 @@
 using System.Diagnostics.CodeAnalysis;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
+using Texnokaktus.ProgOlymp.Api.Logic.Models;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
-                                 TimeProvider timeProvider) : IRegistrationService
+                                 TimeProvider timeProvider,
+                                 IUnitOfWork unitOfWork,
+                                 IUserService userService) : IRegistrationService
 {
-    public async Task<ContestRegistrationState?> GetRegistrationState(int contestId)
+    public async Task<ContestRegistrationState?> GetRegistrationStateAsync(int contestId)
     {
         if (await contestService.GetContestAsync(contestId) is not { } contest) return null;
 
@@ -21,13 +25,28 @@ public class RegistrationService(IContestService contestService,
                    GetState(contest, timeProvider.GetUtcNow()));
     }
 
-    public async Task RegisterUserToPreliminaryStageAsync(int contestId, string login, string? displayName)
+    public Task<bool> IsUserRegisteredAsync(int contestId, int userId) =>
+        unitOfWork.ApplicationRepository.ExistsAsync(application => application.ContestId == contestId
+                                                                 && application.UserId == userId);
+
+    public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
+    {
+        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel());
+
+        await unitOfWork.SaveChangesAsync();
+
+        var user = await userService.GetByIdAsync(userInsertModel.UserId)
+                ?? throw new UserNotFoundException(userInsertModel.UserId);
+
+        await RegisterUserToPreliminaryStageAsync(userInsertModel.ContestId, user.Login, user.Login);
+
+        return entity.Id;
+    }
+
+    private async Task RegisterUserToPreliminaryStageAsync(int contestId, string login, string? displayName)
     {
         if (await contestService.GetContestAsync(contestId) is not { } contest)
             throw new ContestNotFoundException(contestId);
-
-        if (GetState(contest, timeProvider.GetUtcNow()) != RegistrationState.InProgress)
-            throw new RegistrationIsNotAvailableException();
 
         await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
     }
@@ -42,4 +61,40 @@ public class RegistrationService(IContestService contestService,
         if (now >= contest.RegistrationFinish) return RegistrationState.Finished;
         return RegistrationState.InProgress;
     }
+}
+
+file static class MappingExtensions
+{
+    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel) =>
+        new(userInsertModel.UserId,
+            userInsertModel.ContestId,
+            userInsertModel.Name.MapName(),
+            userInsertModel.BirthDate,
+            userInsertModel.Snils,
+            userInsertModel.Email,
+            userInsertModel.SchoolName,
+            userInsertModel.RegionId,
+            userInsertModel.Parent.MapThirdPerson(),
+            userInsertModel.Teacher.MapTeacher(),
+            userInsertModel.PersonalDataConsent,
+            userInsertModel.Grade);
+    
+    private static DataAccess.Models.Teacher MapTeacher(this Teacher teacher)
+    {
+        var thirdPerson = teacher.MapThirdPerson();
+        return new(thirdPerson.Name,
+                   thirdPerson.Email,
+                   thirdPerson.Phone,
+                   teacher.School);
+    }
+    
+    private static DataAccess.Models.ThirdPerson MapThirdPerson(this Models.ThirdPerson thirdPerson) =>
+        new(thirdPerson.Name.MapName(),
+            thirdPerson.Email,
+            thirdPerson.Phone);
+    
+    private static DataAccess.Models.Name MapName(this Name name) =>
+        new(name.FirstName,
+            name.LastName,
+            name.Patronym);
 }

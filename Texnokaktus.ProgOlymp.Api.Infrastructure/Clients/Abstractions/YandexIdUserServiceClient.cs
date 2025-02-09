@@ -2,7 +2,7 @@ using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexId;
 
 namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 
-public class YandexIdUserServiceClient(Common.Contracts.Grpc.YandexId.UserService.UserServiceClient client) : IYandexIdUserServiceClient
+public class YandexIdUserServiceClient(UserService.UserServiceClient client) : IYandexIdUserServiceClient
 {
     public async Task<string> GetOAuthUrlAsync(string? urlRequest)
     {

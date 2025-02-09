@@ -7,5 +7,6 @@ public interface IUnitOfWork
     IRegionRepository RegionRepository { get; }
     IApplicationRepository ApplicationRepository { get; }
     IContestRepository ContestRepository { get; }
+    IUserRepository UserRepository { get; }
     Task<int> SaveChangesAsync();
 }

@@ -16,7 +16,8 @@ public static class DiUtils
                          .AddScoped<IUnitOfWork, UnitOfWork>()
                          .AddScoped<IRegionRepository, RegionRepository>()
                          .AddScoped<IApplicationRepository, ApplicationRepository>()
-                         .AddScoped<IContestRepository, ContestRepository>();
+                         .AddScoped<IContestRepository, ContestRepository>()
+                         .AddScoped<IUserRepository, UserRepository>();
 
     public static IHealthChecksBuilder AddDatabaseHealthChecks(this IHealthChecksBuilder builder) =>
         builder.AddDbContextCheck<AppDbContext>("database");

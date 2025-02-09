@@ -1,8 +1,6 @@
-namespace Texnokaktus.ProgOlymp.Api.Logic.Models;
+namespace Texnokaktus.ProgOlymp.Api.Models;
 
-public record ApplicationInsertModel(int UserId,
-                                     int ContestId,
-                                     Name Name,
+public record ApplicationInsertModel(Name Name,
                                      DateOnly BirthDate,
                                      string Snils,
                                      string Email,

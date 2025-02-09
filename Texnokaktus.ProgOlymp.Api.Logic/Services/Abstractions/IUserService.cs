@@ -1,9 +1,9 @@
-using Texnokaktus.ProgOlymp.Api.Logic.Models;
+using Texnokaktus.ProgOlymp.Api.Domain;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 public interface IUserService
 {
-    Task<bool> IsUserRegisteredAsync(int contestId, string login);
-    Task<int> RegisterUserAsync(UserInsertModel userInsertModel);
+    Task<User?> GetByIdAsync(int id);
+    Task<User> AuthenticateUserAsync(string code);
 }

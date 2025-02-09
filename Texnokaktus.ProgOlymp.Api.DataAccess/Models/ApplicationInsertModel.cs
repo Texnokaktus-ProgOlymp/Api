@@ -1,4 +1,6 @@
-namespace Texnokaktus.ProgOlymp.Api.Logic.Models;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
+
+namespace Texnokaktus.ProgOlymp.Api.DataAccess.Models;
 
 public record ApplicationInsertModel(int UserId,
                                      int ContestId,
