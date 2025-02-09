@@ -11,18 +11,14 @@ using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
-using Texnokaktus.ProgOlymp.Api.Services;
-using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
-using IAuthenticationService = Texnokaktus.ProgOlymp.Api.Services.Abstractions.IAuthenticationService;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
        .AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultDb")))
        .AddLogicServices()
-       .AddScoped<IAuthenticationService, JwtAuthenticationService>()
-       .AddScoped<IRegistrationService, RegistrationService>();
+       .AddPresentationServices();
 
 builder.Services.AddOptions<JwtSettings>().BindConfiguration(nameof(JwtSettings));
 
@@ -83,7 +79,7 @@ app.UseAuthorization();
 
 app.MapGroup("api")
    .MapAuthorizationEndpoints()
-   .MapRegistrationEndpoints()
+   .MapContestEndpoints()
    .MapRegionEndpoints();
 
 /*

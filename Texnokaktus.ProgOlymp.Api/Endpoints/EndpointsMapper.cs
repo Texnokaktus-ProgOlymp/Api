@@ -14,21 +14,7 @@ internal static class EndpointsMapper
 
         group.MapGet("{contestId:int}", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
 
-        return builder;
-    }
-    
-    public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
-    {
-        builder.MapGet("/regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
-
-        return builder;
-    }
-
-    public static IEndpointRouteBuilder MapRegistrationEndpoints(this IEndpointRouteBuilder builder)
-    {
-        var group = builder.MapGroup("contests/{contestId:int}");
-
-        group.MapPost("/register",
+        group.MapPost("contests/{contestId:int}/register",
                       (int contestId,
                        ApplicationInsertModel model,
                        HttpContext context,
@@ -38,6 +24,13 @@ internal static class EndpointsMapper
                           return service.RegisterUserAsync(contestId, login, model);
                       })
              .RequireAuthorization();
+
+        return builder;
+    }
+    
+    public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
+    {
+        builder.MapGet("/regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
 
         return builder;
     }
