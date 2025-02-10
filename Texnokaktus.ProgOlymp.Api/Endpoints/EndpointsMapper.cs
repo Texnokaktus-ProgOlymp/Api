@@ -14,7 +14,7 @@ internal static class EndpointsMapper
 
         group.MapGet("{contestId:int}", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
 
-        group.MapPost("contests/{contestId:int}/register",
+        group.MapPost("{contestId:int}/register",
                       (int contestId,
                        ApplicationInsertModel model,
                        HttpContext context,
@@ -27,7 +27,7 @@ internal static class EndpointsMapper
 
         return builder;
     }
-    
+
     public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
     {
         builder.MapGet("/regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
@@ -41,11 +41,11 @@ internal static class EndpointsMapper
 
         group.MapGet("url",
                      async (string? redirectUrl,
-                            [FromServices]IYandexIdUserServiceClient c) => TypedResults.Ok(await c.GetOAuthUrlAsync(redirectUrl)));
+                            [FromServices] IYandexIdUserServiceClient c) => TypedResults.Ok(await c.GetOAuthUrlAsync(redirectUrl)));
 
         group.MapGet("redirect",
                      async (string? redirectUrl,
-                            [FromServices]IYandexIdUserServiceClient c) =>
+                            [FromServices] IYandexIdUserServiceClient c) =>
                          TypedResults.Redirect(await c.GetOAuthUrlAsync(redirectUrl)));
 
         group.MapPost("",

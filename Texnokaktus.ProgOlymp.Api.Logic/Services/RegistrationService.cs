@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Metrics;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
 using Texnokaktus.ProgOlymp.Api.Logic.Models;
+using Texnokaktus.ProgOlymp.Api.Logic.Observability;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
@@ -14,6 +16,9 @@ public class RegistrationService(IContestService contestService,
                                  IUnitOfWork unitOfWork,
                                  IUserService userService) : IRegistrationService
 {
+    private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered");
+    private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
+
     public async Task<ContestRegistrationState?> GetRegistrationStateAsync(int contestId)
     {
         if (await contestService.GetContestAsync(contestId) is not { } contest) return null;
@@ -34,6 +39,10 @@ public class RegistrationService(IContestService contestService,
         var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel());
 
         await unitOfWork.SaveChangesAsync();
+        
+        _registeredUsers.Add(1,
+                             KeyValuePair.Create<string, object?>("contestId", userInsertModel.ContestId),
+                             KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
 
         var user = await userService.GetByIdAsync(userInsertModel.UserId)
                 ?? throw new UserNotFoundException(userInsertModel.UserId);
@@ -49,6 +58,7 @@ public class RegistrationService(IContestService contestService,
             throw new ContestNotFoundException(contestId);
 
         await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
+        _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
     }
     
     [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]

@@ -1,12 +1,16 @@
+using System.Diagnostics.Metrics;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Logic.Observability;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient) : IUserService
 {
+    private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateCounter<int>("users.authenticated");
+
     public async Task<User?> GetByIdAsync(int id)
     {
         var user = await unitOfWork.UserRepository.GetUserByIdAsync(id);
@@ -18,6 +22,7 @@ public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yand
         var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
         var dbUser = await ConvertToDbUserAsync(user);
         await unitOfWork.SaveChangesAsync();
+        _authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
 
         return dbUser.MapUser();
     }
