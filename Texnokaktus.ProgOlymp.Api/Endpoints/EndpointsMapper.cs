@@ -1,6 +1,4 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
-using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Models;
 using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
@@ -20,6 +18,8 @@ internal static class EndpointsMapper
                        HttpContext context,
                        IRegistrationService service) => service.RegisterUserAsync(contestId, context.GetUserId(), model))
              .RequireAuthorization();
+
+        group.MapGet("participation", () => 0);
 
         return builder;
     }
