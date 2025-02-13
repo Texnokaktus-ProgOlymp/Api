@@ -83,7 +83,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGroup("api")
-   .MapAuthorizationEndpoints()
+   .MapUsersEndpoints()
    .MapContestEndpoints()
    .MapRegionEndpoints();
 

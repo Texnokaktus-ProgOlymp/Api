@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
@@ -28,4 +29,9 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
         return context.Users.Add(entity).Entity;
     }
+
+    public Task<bool> ExistsAsync(Expression<Func<User, bool>> predicate) =>
+        context.Users
+               .AsNoTracking()
+               .AnyAsync(predicate);
 }
