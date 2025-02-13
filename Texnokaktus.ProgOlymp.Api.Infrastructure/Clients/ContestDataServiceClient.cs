@@ -26,4 +26,30 @@ internal class ContestDataServiceClient(ContestDataService.ContestDataServiceCli
         var response = await client.GetContestAsync(request);
         return response.Result;
     }
+
+    public async Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch)
+    {
+        var request = new GetStandingsRequest
+        {
+            ContestId = contestStageId,
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            ParticipantSearch = participantSearch
+        };
+
+        var response = await client.GetStandingsAsync(request);
+        return response.Result;
+    }
+
+    public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, string participantLogin)
+    {
+        var request = new ParticipantStatusRequest
+        {
+            ContestId = contestStageId,
+            ParticipantLogin = participantLogin
+        };
+
+        var response = await client.GetParticipantStatusAsync(request);
+        return response.Result;
+    }
 }

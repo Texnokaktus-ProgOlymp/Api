@@ -7,5 +7,6 @@ internal static class DiExtensions
 {
     public static IServiceCollection AddPresentationServices(this IServiceCollection services) =>
         services.AddScoped<IAuthenticationService, JwtAuthenticationService>()
-                .AddScoped<IRegistrationService, RegistrationService>();
+                .AddScoped<IRegistrationService, RegistrationService>()
+                .AddScoped<IUserService, UserService>();
 }

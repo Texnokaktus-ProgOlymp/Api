@@ -1,6 +1,4 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
-using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Models;
 using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
@@ -10,20 +8,18 @@ internal static class EndpointsMapper
 {
     public static IEndpointRouteBuilder MapContestEndpoints(this IEndpointRouteBuilder builder)
     {
-        var group = builder.MapGroup("contests");
+        var group = builder.MapGroup("contests/{contestId:int}");
 
-        group.MapGet("{contestId:int}", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
+        group.MapGet("", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
 
-        group.MapPost("{contestId:int}/register",
+        group.MapPost("register",
                       (int contestId,
                        ApplicationInsertModel model,
                        HttpContext context,
-                       IRegistrationService service) =>
-                      {
-                          var login = int.Parse(context.User.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
-                          return service.RegisterUserAsync(contestId, login, model);
-                      })
+                       IRegistrationService service) => service.RegisterUserAsync(contestId, context.GetUserId(), model))
              .RequireAuthorization();
+
+        group.MapGet("participation", () => 0);
 
         return builder;
     }
@@ -35,6 +31,21 @@ internal static class EndpointsMapper
         return builder;
     }
 
+    public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder builder)
+    {
+        var group = builder.MapGroup("user");
+
+        group.MapPost("authorize",
+                      (AuthorizationModel model, HttpContext context, IAuthenticationService service) =>
+                          service.AuthenticateUserAsync(context, model.Code));
+
+        group.MapGet("current", (HttpContext context, IUserService userService) => userService.GetUserAsync(context.GetUserId()))
+             .RequireAuthorization();
+
+        return builder;
+    }
+
+    /*
     public static IEndpointRouteBuilder MapAuthorizationEndpoints(this IEndpointRouteBuilder builder)
     {
         var group = builder.MapGroup("authorize");
@@ -48,11 +59,7 @@ internal static class EndpointsMapper
                             [FromServices] IYandexIdUserServiceClient c) =>
                          TypedResults.Redirect(await c.GetOAuthUrlAsync(redirectUrl)));
 
-        group.MapPost("",
-                      (AuthorizationModel model,
-                       HttpContext context,
-                       IAuthenticationService service) => service.AuthenticateUserAsync(context, model.Code));
-
         return builder;
     }
+    */
 }

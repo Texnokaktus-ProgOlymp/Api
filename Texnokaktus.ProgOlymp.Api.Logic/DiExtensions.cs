@@ -13,5 +13,8 @@ public static class DiExtensions
                 .AddScoped<IRegionService, RegionService>()
                 .Decorate<IRegionService, RegionServiceCachingDecorator>()
                 .AddScoped<IUserService, UserService>()
-                .Decorate<IUserService, UserServiceCachingDecorator>();
+                .Decorate<IUserService, UserServiceCachingDecorator>()
+                .AddScoped<IParticipationService, ParticipationService>()
+                .Decorate<IParticipationService, ParticipationServiceCachingDecorator>()
+                .AddScoped<IResultService, ResultService>();
 }

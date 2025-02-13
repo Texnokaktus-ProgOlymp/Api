@@ -26,6 +26,11 @@ public class JwtAuthenticationService(IUserService userService,
             new(ClaimTypes.Name, user.Login)
         };
 
+        return TypedResults.Ok(GetTokenModel(claims));
+    }
+
+    private TokenModel GetTokenModel(IEnumerable<Claim> claims)
+    {
         var key = new SymmetricSecurityKey(Convert.FromBase64String(jwtSettings.Value.IssuerSigningKey));
         var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -40,10 +45,6 @@ public class JwtAuthenticationService(IUserService userService,
                                          signingCredentials);
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return TypedResults.Ok(new TokenModel(tokenString,
-                                              expiration,
-                                              new(user.Login,
-                                                  user.DisplayName,
-                                                  user.DefaultAvatar)));
+        return new(tokenString, expiration);
     }
 }
