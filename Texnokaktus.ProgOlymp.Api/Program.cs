@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddGrpcClients(builder.Configuration);
 
 builder.Services.AddOpenApi(options => options.AddSchemaTransformer<SchemaTransformer>());
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 

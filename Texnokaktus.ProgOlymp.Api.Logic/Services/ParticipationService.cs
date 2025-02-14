@@ -1,6 +1,5 @@
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
-using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
@@ -16,20 +15,20 @@ public class ParticipationService(IUserService userService,
         if (!await registrationService.IsUserRegisteredAsync(contestId, userId))
             return new(false, null, null);
 
-        var user = await userService.GetByIdAsync(userId) ?? throw new UserNotFoundException(userId);
-        var contest = await contestService.GetContestAsync(contestId) ?? throw new ContestNotFoundException(contestId);
+        var user = await userService.GetRequiredUserAsync(userId);
+        var contest = await contestService.GetRequiredContestAsync(contestId);
 
-        var preliminaryParticipation = await GetContestStageParticipation(user, contest.PreliminaryStage);
+        var preliminaryParticipation = await GetContestStageParticipationAsync(user.Login, contest.PreliminaryStage);
 
         return new(true, preliminaryParticipation, null);
     }
 
-    private async Task<ContestStageParticipation?> GetContestStageParticipation(User user, ContestStage? contestStage)
+    private async Task<ContestStageParticipation?> GetContestStageParticipationAsync(string userLogin, ContestStage? contestStage)
     {
         if (contestStage is null)
             return null;
 
-        var participantStatus = await contestDataServiceClient.GetParticipantStatusAsync(contestStage.Id, user.Login);
+        var participantStatus = await contestDataServiceClient.GetParticipantStatusAsync(contestStage.Id, userLogin);
 
         var state = participantStatus.State.MapParticipationState();
 
@@ -37,7 +36,7 @@ public class ParticipationService(IUserService userService,
             return new(contestStage.ContestStart,
                        contestStage.ContestFinish,
                        state,
-                       await resultService.GetContestResultsAsync(user.Login, contestStage.Id));
+                       await resultService.GetContestResultsAsync(userLogin, contestStage.Id));
 
         return new(contestStage.ContestStart, contestStage.ContestFinish, state, null);
     }

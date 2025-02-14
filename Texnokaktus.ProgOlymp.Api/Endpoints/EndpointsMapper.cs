@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
 using Texnokaktus.ProgOlymp.Api.Extensions;
+using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
 using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Validators;
 
 namespace Texnokaktus.ProgOlymp.Api.Endpoints;
 
@@ -10,23 +13,34 @@ internal static class EndpointsMapper
     {
         var group = builder.MapGroup("contests/{contestId:int}");
 
-        group.MapGet("", (int contestId, IRegistrationService registrationStateService) => registrationStateService.GetRegistrationStateAsync(contestId));
+        group.MapGet("",
+                     (int contestId, IRegistrationService registrationStateService) =>
+                         registrationStateService.GetRegistrationStateAsync(contestId));
 
         group.MapPost("register",
-                      (int contestId,
-                       ApplicationInsertModel model,
-                       HttpContext context,
-                       IRegistrationService service) => service.RegisterUserAsync(contestId, context.GetUserId(), model))
+                      (int contestId, ApplicationInsertModel model, HttpContext context, IRegistrationService service)
+                          => service.RegisterUserAsync(contestId, context.GetUserId(), model))
+             .AddEndpointFilter<ValidationFilter<ApplicationInsertModel>>()
              .RequireAuthorization();
 
-        group.MapGet("participation", () => 0);
+        group.MapGet("participation",
+                     (int contestId, IParticipationService participationService, HttpContext context)
+                         => participationService.GetParticipationAsync(context.GetUserId(), contestId));
 
         return builder;
     }
 
     public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
     {
-        builder.MapGet("/regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
+        builder.MapGet("regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
+        
+        /*
+         * TODO Remove
+         */
+
+        builder.MapGet("results",
+                       (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
+                           s.GetContestParticipationAsync(login, contestId));
 
         return builder;
     }
