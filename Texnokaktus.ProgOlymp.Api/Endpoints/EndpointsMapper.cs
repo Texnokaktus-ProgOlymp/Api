@@ -38,9 +38,9 @@ internal static class EndpointsMapper
          * TODO Remove
          */
 
-        builder.MapGet("results",
-                       (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
-                           s.GetContestParticipationAsync(login, contestId));
+        // builder.MapGet("results",
+        //                (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
+        //                    s.GetContestParticipationAsync(login, contestId));
 
         return builder;
     }
