@@ -74,7 +74,7 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapGrpcHealthChecksService();
 
-if (app.Environment.IsDevelopment())
+// if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwaggerUI(options => options.ConfigObject.Urls = [new() { Name = "v1", Url = "/openapi/v1.json" }]);
