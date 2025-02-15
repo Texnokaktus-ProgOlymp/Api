@@ -25,7 +25,8 @@ internal static class EndpointsMapper
 
         group.MapGet("participation",
                      (int contestId, IParticipationService participationService, HttpContext context)
-                         => participationService.GetParticipationAsync(context.GetUserId(), contestId));
+                         => participationService.GetParticipationAsync(context.GetUserId(), contestId))
+             .RequireAuthorization();
 
         return builder;
     }
@@ -53,7 +54,9 @@ internal static class EndpointsMapper
                       (AuthorizationModel model, HttpContext context, IAuthenticationService service) =>
                           service.AuthenticateUserAsync(context, model.Code));
 
-        group.MapGet("current", (HttpContext context, IUserService userService) => userService.GetUserAsync(context.GetUserId()))
+        group.MapGet("current",
+                     (HttpContext context, IUserService userService) =>
+                         userService.GetUserAsync(context.GetUserId()))
              .RequireAuthorization();
 
         return builder;
