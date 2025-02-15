@@ -68,11 +68,20 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{ 
+    options.AddDefaultPolicy(policyBuilder => policyBuilder.AllowAnyOrigin()
+                                                           .AllowAnyHeader()
+                                                           .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapGrpcHealthChecksService();
+
+app.UseCors();
 
 // if (app.Environment.IsDevelopment())
 {
