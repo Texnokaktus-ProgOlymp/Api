@@ -33,12 +33,13 @@ public class ParticipationService(IUserService userService,
         var state = participantStatus.State.MapParticipationState();
 
         if (state is ParticipationState.InProgress or ParticipationState.Finished)
-            return new(contestStage.ContestStart,
+            return new(contestStage.Id,
+                       contestStage.ContestStart,
                        contestStage.ContestFinish,
                        state,
                        await resultService.GetContestResultsAsync(userLogin, contestStage.Id));
 
-        return new(contestStage.ContestStart, contestStage.ContestFinish, state, null);
+        return new(contestStage.Id, contestStage.ContestStart, contestStage.ContestFinish, state, null);
     }
 }
 

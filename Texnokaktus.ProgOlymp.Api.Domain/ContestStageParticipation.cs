@@ -1,7 +1,7 @@
 namespace Texnokaktus.ProgOlymp.Api.Domain;
 
-public record ContestStageParticipation(DateTimeOffset Start,
+public record ContestStageParticipation(long? ContestId,
+                                        DateTimeOffset Start,
                                         DateTimeOffset? Finish,
                                         ParticipationState State,
-                                        // long? Url,
                                         ContestResults? Results);
