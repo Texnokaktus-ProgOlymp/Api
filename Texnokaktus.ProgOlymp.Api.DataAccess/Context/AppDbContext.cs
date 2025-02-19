@@ -20,6 +20,10 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.HasKey(contest => contest.Id);
             builder.Property(contest => contest.Id).UseIdentityColumn();
 
+            builder.Property(stage => stage.Name)
+                   .IsUnicode()
+                   .HasMaxLength(100);
+
             builder.HasOne<ContestStage>(contest => contest.PreliminaryStage)
                    .WithOne()
                    .HasForeignKey<Contest>(contest => contest.PreliminaryStageId);
@@ -34,6 +38,10 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.HasKey(stage => stage.Id);
             builder.Property(stage => stage.Id).ValueGeneratedNever();
 
+            builder.Property(stage => stage.Name)
+                   .IsUnicode()
+                   .HasMaxLength(100);
+
             builder.Property(stage => stage.Duration)
                    .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
         });
@@ -44,6 +52,10 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
 
             builder.Property(region => region.Id)
                    .ValueGeneratedNever();
+
+            builder.Property(region => region.Name)
+                   .IsUnicode()
+                   .HasMaxLength(40);
 
             builder.Property(region => region.Order)
                    .HasDefaultValue(0);
@@ -82,6 +94,10 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.HasKey(user => user.Id);
 
             builder.HasAlternateKey(user => user.Login);
+
+            builder.Property(user => user.Login).IsUnicode(false) /*.HasMaxLength(128)*/;
+            builder.Property(user => user.DisplayName).IsUnicode() /*.HasMaxLength(128)*/;
+            builder.Property(user => user.DefaultAvatar).IsUnicode(false) /*.HasMaxLength(96)*/;
         });
 
         base.OnModelCreating(modelBuilder);
