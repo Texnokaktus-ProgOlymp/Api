@@ -29,7 +29,8 @@ public class UserRepository(AppDbContext context) : IUserRepository
         {
             Login = insertModel.Login,
             DisplayName = insertModel.DisplayName,
-            DefaultAvatar = insertModel.DefaultAvatar
+            DefaultAvatar = insertModel.DefaultAvatar,
+            Created = insertModel.Created
         };
 
         return context.Users.Add(entity).Entity;

@@ -36,10 +36,10 @@ public class RegistrationService(IContestService contestService,
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel());
+        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow()));
 
         await unitOfWork.SaveChangesAsync();
-        
+
         _registeredUsers.Add(1,
                              KeyValuePair.Create<string, object?>("contestId", userInsertModel.ContestId),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
@@ -60,7 +60,7 @@ public class RegistrationService(IContestService contestService,
         await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
     }
-    
+
     [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
     private static RegistrationState GetState(Contest contest, DateTimeOffset now)
     {
@@ -75,9 +75,10 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel) =>
+    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created) =>
         new(userInsertModel.UserId,
             userInsertModel.ContestId,
+            created,
             userInsertModel.Name.MapName(),
             userInsertModel.BirthDate,
             userInsertModel.Snils,
@@ -88,7 +89,7 @@ file static class MappingExtensions
             userInsertModel.Teacher.MapTeacher(),
             userInsertModel.PersonalDataConsent,
             userInsertModel.Grade);
-    
+
     private static DataAccess.Models.Teacher MapTeacher(this Teacher teacher)
     {
         var thirdPerson = teacher.MapThirdPerson();
@@ -97,12 +98,12 @@ file static class MappingExtensions
                    thirdPerson.Phone,
                    teacher.School);
     }
-    
+
     private static DataAccess.Models.ThirdPerson MapThirdPerson(this Models.ThirdPerson thirdPerson) =>
         new(thirdPerson.Name.MapName(),
             thirdPerson.Email,
             thirdPerson.Phone);
-    
+
     private static DataAccess.Models.Name MapName(this Name name) =>
         new(name.FirstName,
             name.LastName,

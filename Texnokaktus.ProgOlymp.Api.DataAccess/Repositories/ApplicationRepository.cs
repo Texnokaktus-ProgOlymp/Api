@@ -23,6 +23,7 @@ public class ApplicationRepository(AppDbContext context) : IApplicationRepositor
         {
             UserId = insertModel.UserId,
             ContestId = insertModel.ContestId,
+            Created = insertModel.Created,
             FirstName = insertModel.Name.FirstName,
             LastName = insertModel.Name.LastName,
             Patronym = insertModel.Name.Patronym,
