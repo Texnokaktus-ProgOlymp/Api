@@ -3,7 +3,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 public class Contest
 {
     public int Id { get; init; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     public long? PreliminaryStageId { get; set; }
     public long? FinalStageId { get; set; }

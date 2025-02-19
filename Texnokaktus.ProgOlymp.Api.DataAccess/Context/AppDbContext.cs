@@ -3,14 +3,14 @@ using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 
 namespace Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 
-public class AppDbContext(DbContextOptions options) : DbContext(options)
+public class AppDbContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider) : DbContext(options)
 {
     public DbSet<Contest> Contests { get; set; }
     public DbSet<ContestStage> ContestStages { get; set; }
     public DbSet<Region> Regions { get; set; }
     public DbSet<Application> Applications { get; set; }
     public DbSet<User> Users { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Contest>(builder =>
@@ -35,10 +35,11 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             builder.Property(stage => stage.Duration)
                    .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
         });
-        
+
         modelBuilder.Entity<Region>(builder =>
         {
             builder.HasKey(region => region.Id);
+
             builder.Property(region => region.Id)
                    .ValueGeneratedNever();
 
@@ -54,6 +55,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
             builder.HasKey(application => application.Id);
 
             builder.HasAlternateKey(application => new { application.ContestId, application.UserId });
+
+            builder.Property(application => application.Snils)
+                   .HasConversion(new EncryptionConverter(dataProtectionProvider.CreateProtector(nameof(Application.Snils))));
 
             builder.HasOne(application => application.User)
                    .WithMany()
@@ -77,7 +81,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 
             builder.HasAlternateKey(user => user.Login);
         });
-        
+
         base.OnModelCreating(modelBuilder);
     }
 }
