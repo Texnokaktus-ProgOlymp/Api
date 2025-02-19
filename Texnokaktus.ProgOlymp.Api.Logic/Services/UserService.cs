@@ -9,7 +9,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient) : IUserService
 {
-    private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateCounter<int>("users.authenticated");
+    private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
 
     public async Task<User?> GetByIdAsync(int id)
     {

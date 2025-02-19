@@ -16,7 +16,7 @@ public class RegistrationService(IContestService contestService,
                                  IUnitOfWork unitOfWork,
                                  IUserService userService) : IRegistrationService
 {
-    private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered");
+    private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
     private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
 
     public async Task<ContestRegistrationState?> GetRegistrationStateAsync(int contestId)

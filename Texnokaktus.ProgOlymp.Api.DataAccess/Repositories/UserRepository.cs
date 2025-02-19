@@ -9,6 +9,11 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories;
 
 public class UserRepository(AppDbContext context) : IUserRepository
 {
+    public Task<User[]> GetUsersAsync() =>
+        context.Users
+               .AsNoTracking()
+               .ToArrayAsync();
+
     public Task<User?> GetUserByIdAsync(int id) =>
         context.Users
                .AsNoTracking()
