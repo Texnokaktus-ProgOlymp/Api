@@ -52,6 +52,15 @@ public class RegistrationService(IContestService contestService,
         return entity.Id;
     }
 
+    public async Task<ContestApplications?> GetContestApplicationsAsync(int contestId)
+    {
+        if (await contestService.GetContestAsync(contestId) is not { } contest) return null;
+
+        var applications = await unitOfWork.ApplicationRepository.GetApplicationsAsync(contestId);
+
+        return new(contest, applications.Select(application => application.MapDomainApplication()));
+    }
+
     private async Task RegisterUserToPreliminaryStageAsync(int contestId, string login, string? displayName)
     {
         if (await contestService.GetContestAsync(contestId) is not { } contest)
@@ -104,8 +113,50 @@ file static class MappingExtensions
             thirdPerson.Email,
             thirdPerson.Phone);
 
-    private static DataAccess.Models.Name MapName(this Name name) =>
+    private static DataAccess.Models.Name MapName(this Models.Name name) =>
         new(name.FirstName,
             name.LastName,
             name.Patronym);
+
+    public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
+        new(application.Id,
+            application.User.MapUser(),
+            application.Created,
+            application.MapParticipantData(),
+            application.Parent.MapParentData(),
+            application.Teacher.MapTeacherData(),
+            application.PersonalDataConsent);
+
+    private static Domain.ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
+        new(new(application.FirstName,
+                application.LastName,
+                application.Patronym),
+            application.BirthDate,
+            application.Snils,
+            true, // TODO Add validation
+            application.Email,
+            application.SchoolName,
+            application.Region.Name,
+            application.Grade);
+
+    private static Domain.ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
+        new(new(parent.FirstName,
+                parent.LastName,
+                parent.Patronym),
+            parent.Email,
+            parent.Phone);
+
+    private static Domain.TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
+        new(new(teacher.FirstName,
+                teacher.LastName,
+                teacher.Patronym),
+            teacher.Email,
+            teacher.Phone,
+            teacher.School);
+
+    private static User MapUser(this DataAccess.Entities.User user) =>
+        new(user.Id,
+            user.Login,
+            user.DisplayName,
+            user.DefaultAvatar);
 }

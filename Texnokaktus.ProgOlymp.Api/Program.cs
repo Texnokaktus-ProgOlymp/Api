@@ -12,6 +12,7 @@ using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
+using Texnokaktus.ProgOlymp.Api.Services.Grpc;
 using Texnokaktus.ProgOlymp.Api.Settings;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
 
@@ -83,7 +84,7 @@ app.MapGrpcHealthChecksService();
 
 app.UseCors();
 
-// if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwaggerUI(options => options.ConfigObject.Urls = [new() { Name = "v1", Url = "/openapi/v1.json" }]);
@@ -92,6 +93,8 @@ app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGrpcService<RegistrationDataServiceImpl>();
 
 app.MapGroup("api")
    .MapUsersEndpoints()
