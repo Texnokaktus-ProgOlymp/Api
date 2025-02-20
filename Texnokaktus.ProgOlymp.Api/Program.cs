@@ -43,9 +43,12 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.C
 
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
+
+#if !DEV
 builder.Services
        .AddGrpcHealthChecks()
        .AddDatabaseHealthChecks();
+#endif
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
