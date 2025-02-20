@@ -7,9 +7,9 @@ using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient) : IUserService
+public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
 {
-    private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateCounter<int>("users.authenticated");
+    private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
 
     public async Task<User?> GetByIdAsync(int id)
     {
@@ -30,7 +30,7 @@ public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yand
     private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User user)
     {
         if (await unitOfWork.UserRepository.GetUserByLoginAsync(user.Login) is not { } dbUser)
-            return unitOfWork.UserRepository.AddUser(new(user.Login, user.DisplayName, user.Avatar?.AvatarId));
+            return unitOfWork.UserRepository.AddUser(new(user.Login, user.DisplayName, user.Avatar?.AvatarId, timeProvider.GetUtcNow()));
 
         dbUser.DisplayName = user.DisplayName;
         dbUser.DefaultAvatar = user.Avatar?.AvatarId;

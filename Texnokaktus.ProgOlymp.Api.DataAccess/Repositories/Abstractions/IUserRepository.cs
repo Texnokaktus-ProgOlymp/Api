@@ -6,6 +6,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories.Abstractions;
 
 public interface IUserRepository
 {
+    Task<User[]> GetUsersAsync();
     Task<User?> GetUserByIdAsync(int id);
     Task<User?> GetUserByLoginAsync(string login);
     User AddUser(UserInsertModel insertModel);

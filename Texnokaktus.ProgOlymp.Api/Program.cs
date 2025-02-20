@@ -12,6 +12,7 @@ using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
+using Texnokaktus.ProgOlymp.Api.Services.Grpc;
 using Texnokaktus.ProgOlymp.Api.Settings;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
 
@@ -68,11 +69,20 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{ 
+    options.AddDefaultPolicy(policyBuilder => policyBuilder.AllowAnyOrigin()
+                                                           .AllowAnyHeader()
+                                                           .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapGrpcHealthChecksService();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -84,49 +94,11 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGrpcService<RegistrationDataServiceImpl>();
+
 app.MapGroup("api")
    .MapUsersEndpoints()
    .MapContestEndpoints()
    .MapRegionEndpoints();
-
-/*
-await using (var scope = app.Services.CreateAsyncScope())
-{
-       var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-       await context.Database.EnsureDeletedAsync();
-       await context.Database.EnsureCreatedAsync();
-       
-       await using var f = File.OpenRead(@"D:\kav128\Downloads\regions.json");
-       var jsonNode = JsonNode.Parse(f);
-    
-       context.Regions.AddRange(jsonNode.AsArray()
-                                        .Select(x => new Region
-                                         {
-                                                Id = x["Id"].GetValue<int>(),
-                                                Name = x["Name"].GetValue<string>(),
-                                                Order = x["Id"].GetValue<int>() switch
-                                                {
-                                                       78 => 10,
-                                                       47 => 9,
-                                                       77 => 5,
-                                                       _  => 0
-                                                }
-                                         }));
-       
-       await context.SaveChangesAsync();
-
-       var contestService = scope.ServiceProvider.GetRequiredService<IContestService>();
-       await contestService.AddContestAsync("Олимпиада по информатике и программированию 2025",
-                                            new(2025, 02, 22, 00, 00, 00, TimeSpan.FromHours(3)),
-                                            new(2025, 03, 14, 00, 00, 00, TimeSpan.FromHours(3)),
-                                            71377L,
-                                            74534L);
-       
-       await context.ContestStages
-                    .Where(stage => stage.Id == 71377L)
-                    .ExecuteUpdateAsync(x => x.SetProperty(stage => stage.ContestFinish,
-                                                           _ => new(2025, 03, 14, 00, 00, 00, TimeSpan.FromHours(3))));
-}
-*/
 
 await app.RunAsync();

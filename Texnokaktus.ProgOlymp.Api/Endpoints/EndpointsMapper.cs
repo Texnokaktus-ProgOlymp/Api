@@ -19,13 +19,14 @@ internal static class EndpointsMapper
 
         group.MapPost("register",
                       (int contestId, ApplicationInsertModel model, HttpContext context, IRegistrationService service)
-                          => TypedResults.Ok() /*service.RegisterUserAsync(contestId, context.GetUserId(), model)*/)
+                          => service.RegisterUserAsync(contestId, context.GetUserId(), model))
              .AddEndpointFilter<ValidationFilter<ApplicationInsertModel>>()
              .RequireAuthorization();
 
         group.MapGet("participation",
                      (int contestId, IParticipationService participationService, HttpContext context)
-                         => participationService.GetParticipationAsync(context.GetUserId(), contestId));
+                         => participationService.GetParticipationAsync(context.GetUserId(), contestId))
+             .RequireAuthorization();
 
         return builder;
     }
@@ -33,14 +34,14 @@ internal static class EndpointsMapper
     public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
     {
         builder.MapGet("regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
-        
+
         /*
          * TODO Remove
          */
 
-        builder.MapGet("results",
-                       (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
-                           s.GetContestParticipationAsync(login, contestId));
+        // builder.MapGet("results",
+        //                (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
+        //                    s.GetContestParticipationAsync(login, contestId));
 
         return builder;
     }
@@ -53,12 +54,15 @@ internal static class EndpointsMapper
                       (AuthorizationModel model, HttpContext context, IAuthenticationService service) =>
                           service.AuthenticateUserAsync(context, model.Code));
 
-        group.MapGet("current", (HttpContext context, IUserService userService) => userService.GetUserAsync(context.GetUserId()))
+        group.MapGet("current",
+                     (HttpContext context, IUserService userService) =>
+                         userService.GetUserAsync(context.GetUserId()))
              .RequireAuthorization();
 
         return builder;
     }
 
+    /*
     public static IEndpointRouteBuilder MapAuthorizationEndpoints(this IEndpointRouteBuilder builder)
     {
         var group = builder.MapGroup("authorize");
@@ -74,4 +78,5 @@ internal static class EndpointsMapper
 
         return builder;
     }
+    */
 }

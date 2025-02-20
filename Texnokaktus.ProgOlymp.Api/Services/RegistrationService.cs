@@ -3,6 +3,7 @@ using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
 using ContestRegistrationState = Texnokaktus.ProgOlymp.Api.Models.ContestRegistrationState;
+using Name = Texnokaktus.ProgOlymp.Api.Models.Name;
 
 namespace Texnokaktus.ProgOlymp.Api.Services;
 

@@ -5,7 +5,7 @@ using Texnokaktus.ProgOlymp.Api.Models;
 
 namespace Texnokaktus.ProgOlymp.Api.Validators;
 
-public partial class ApplicationInsertModelValidator : AbstractValidator<ApplicationInsertModel>
+public class ApplicationInsertModelValidator : AbstractValidator<ApplicationInsertModel>
 {
     public ApplicationInsertModelValidator(IRegionService regionService,
                                            IValidator<Name> nameValidator,
@@ -13,7 +13,7 @@ public partial class ApplicationInsertModelValidator : AbstractValidator<Applica
                                            IValidator<Teacher> teacherValidator)
     {
         RuleFor(model => model.Name).SetValidator(nameValidator);
-        RuleFor(model => model.Snils).Matches(SnilsRegex());
+        // RuleFor(model => model.Snils).Matches(SnilsRegex());
         RuleFor(model => model.Email).EmailAddress();
         RuleFor(model => model.SchoolName).NotEmpty();
         RuleFor(model => model.RegionId).MustAsync((regionId, _) => regionService.ExistsAsync(regionId));
@@ -23,6 +23,8 @@ public partial class ApplicationInsertModelValidator : AbstractValidator<Applica
         RuleFor(model => model.Grade).InclusiveBetween(8, 11);
     }
 
+    /*
     [GeneratedRegex(@"^\d{3}-\d{3}-\d{3} \d{2}$")]
     private static partial Regex SnilsRegex();
+    */
 }
