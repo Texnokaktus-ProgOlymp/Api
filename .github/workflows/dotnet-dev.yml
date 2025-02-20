@@ -40,7 +40,7 @@ jobs:
 
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: api-service-dev
+      IMAGE_NAME: api-dev-service
 
     outputs:
       name: ${{ steps.get-image-name.outputs.image-name }}
@@ -101,7 +101,7 @@ jobs:
 
     env:
       IMAGE: ${{ needs.docker.outputs.name }}
-      CONTAINER_NAME: api-service-dev
+      CONTAINER_NAME: api-dev-service
       HTTP_PORT: 6101
       GRPC_PORT: 6102
 

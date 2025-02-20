@@ -50,7 +50,12 @@ builder.Services
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddTexnokaktusOpenTelemetry(builder.Configuration,
+#if DEV
+                                             "API-DEV",
+#else
                                              "API",
+#endif
+                                             
                                              null,
                                              meterProviderBuilder => meterProviderBuilder.AddMeter(Texnokaktus.ProgOlymp.Api.Logic.Observability.Constants.MeterName));
 
