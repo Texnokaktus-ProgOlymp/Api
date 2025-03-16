@@ -5,6 +5,7 @@ public class Application
     public int Id { get; init; }
     public required int UserId { get; init; }
     public required int ContestId { get; init; }
+    public required Guid? Uid { get; init; }
     public required DateTimeOffset Created { get; init; }
     public required string FirstName { get; init; }
     public required string LastName { get; init; }

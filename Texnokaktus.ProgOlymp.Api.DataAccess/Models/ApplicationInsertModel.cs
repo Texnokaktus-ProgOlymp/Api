@@ -4,6 +4,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Models;
 
 public record ApplicationInsertModel(int UserId,
                                      int ContestId,
+                                     Guid Uid,
                                      DateTimeOffset Created,
                                      Name Name,
                                      DateOnly BirthDate,

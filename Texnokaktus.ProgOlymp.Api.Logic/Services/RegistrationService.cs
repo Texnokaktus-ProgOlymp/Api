@@ -36,7 +36,9 @@ public class RegistrationService(IContestService contestService,
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow()));
+        var uid = Guid.NewGuid();
+
+        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow(), uid));
 
         await unitOfWork.SaveChangesAsync();
 
@@ -47,7 +49,7 @@ public class RegistrationService(IContestService contestService,
         var user = await userService.GetByIdAsync(userInsertModel.UserId)
                 ?? throw new UserNotFoundException(userInsertModel.UserId);
 
-        await RegisterUserToPreliminaryStageAsync(userInsertModel.ContestId, user.Login, user.Login);
+        await RegisterUserToPreliminaryStageAsync(userInsertModel.ContestId, user.Login, uid.ToString("N"));
 
         return entity.Id;
     }
@@ -84,9 +86,10 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created) =>
+    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created, Guid uid) =>
         new(userInsertModel.UserId,
             userInsertModel.ContestId,
+            uid,
             created,
             userInsertModel.Name.MapName(),
             userInsertModel.BirthDate,
