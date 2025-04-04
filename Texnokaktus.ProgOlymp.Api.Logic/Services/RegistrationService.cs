@@ -123,6 +123,7 @@ file static class MappingExtensions
 
     public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
         new(application.Id,
+            application.Uid,
             application.User.MapUser(),
             application.Created,
             application.MapParticipantData(),

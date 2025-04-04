@@ -1,3 +1,4 @@
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
@@ -37,7 +38,8 @@ file static class MappingExtensions
             ParticipantData = application.ParticipantData.MapParticipantData(),
             ParentData = application.ParentData.MapParentData(),
             TeacherData = application.TeacherData.MapTeacherData(),
-            PersonalDataConsent = application.PersonalDataConsent
+            PersonalDataConsent = application.PersonalDataConsent,
+            Uid = ByteString.CopyFrom(application.Uid?.ToByteArray() ?? [])
         };
 
     private static ParticipantData MapParticipantData(this Domain.ParticipantData participantData) =>
