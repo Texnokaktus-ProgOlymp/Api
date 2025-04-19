@@ -33,8 +33,8 @@ public class ParticipantServiceImpl(IRegistrationService registrationService) : 
     private static string GetGroupName(int grade) =>
         grade switch
         {
-            8 or 9   => "8 - 9 класс",
-            10 or 11 => "10 - 11 класс",
+            8 or 9   => "8\u20139 класс",
+            10 or 11 => "10\u201311 класс",
             _        => throw new ArgumentOutOfRangeException(nameof(grade), grade, "Invalid grade")
         };
 }
