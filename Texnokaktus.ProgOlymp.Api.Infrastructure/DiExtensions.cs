@@ -20,9 +20,6 @@ public static class DiExtensions
                        .AddScoped<IYandexIdUserServiceClient, YandexIdUserServiceClient>();
     }
 
-    private static Uri? GetGrpcConnectionString<TGrpcService>(this IConfiguration configuration) =>
-        configuration.GetConnectionStringUri(typeof(TGrpcService).Name);
-
     private static Uri? GetConnectionStringUri(this IConfiguration configuration, string name) =>
         configuration.GetConnectionString(name) is { } connectionString
             ? new Uri(connectionString)
