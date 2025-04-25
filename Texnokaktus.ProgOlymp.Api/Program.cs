@@ -94,6 +94,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGrpcService<ParticipantServiceImpl>();
 app.MapGrpcService<RegistrationDataServiceImpl>();
 
 app.MapGroup("api")

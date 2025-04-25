@@ -1,0 +1,10 @@
+﻿<Solution>
+  <Folder Name="/Modules/">
+    <Project Path="modules\Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts\Texnokaktus.ProgOlymp.Common.Contracts.csproj" Type="Classic C#" />
+  </Folder>
+  <Project Path="Texnokaktus.ProgOlymp.Api.DataAccess\Texnokaktus.ProgOlymp.Api.DataAccess.csproj" Type="Classic C#" />
+  <Project Path="Texnokaktus.ProgOlymp.Api.Domain\Texnokaktus.ProgOlymp.Api.Domain.csproj" Type="Classic C#" />
+  <Project Path="Texnokaktus.ProgOlymp.Api.Infrastructure\Texnokaktus.ProgOlymp.Api.Infrastructure.csproj" Type="Classic C#" />
+  <Project Path="Texnokaktus.ProgOlymp.Api.Logic\Texnokaktus.ProgOlymp.Api.Logic.csproj" Type="Classic C#" />
+  <Project Path="Texnokaktus.ProgOlymp.Api\Texnokaktus.ProgOlymp.Api.csproj" Type="Classic C#" />
+</Solution>
