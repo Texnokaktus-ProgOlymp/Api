@@ -30,6 +30,20 @@ public class ParticipantServiceImpl(IRegistrationService registrationService) : 
         };
     }
 
+    public override async Task<GetParticipantIdResponse> GetParticipantId(GetParticipantIdRequest request, ServerCallContext context)
+    {
+        var contestApplications = await registrationService.GetContestApplicationsAsync(request.ContestId)
+                               ?? throw new RpcException(new(StatusCode.NotFound, $"Contest with Id {request.ContestId} was not found"));
+
+        var application = contestApplications.Applications.FirstOrDefault(application => application.User.Id == request.UserId)
+                       ?? throw new RpcException(new(StatusCode.NotFound, $"User with Id {request.UserId} was not found in the contest {request.ContestId}"));
+
+        return new()
+        {
+            ParticipantId = application.Id
+        };
+    }
+
     private static string GetGroupName(int grade) =>
         grade switch
         {
