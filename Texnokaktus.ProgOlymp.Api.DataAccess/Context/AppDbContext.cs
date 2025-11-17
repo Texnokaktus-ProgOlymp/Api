@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Converters;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 
@@ -71,7 +72,7 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.HasAlternateKey(application => new { application.ContestId, application.UserId });
 
             builder.Property(application => application.Snils)
-                   .HasConversion(new EncryptionConverter(dataProtectionProvider.CreateProtector(nameof(Application.Snils))));
+                   .IsEncrypted(dataProtectionProvider.CreateProtector(nameof(Application.Snils)));
 
             builder.HasOne(application => application.User)
                    .WithMany()
@@ -102,4 +103,11 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
 
         base.OnModelCreating(modelBuilder);
     }
+}
+
+file static class EfExtensions
+{
+    public static PropertyBuilder<string?> IsEncrypted(this PropertyBuilder<string?> propertyBuilder,
+                                                       IDataProtector dataProtector) =>
+        propertyBuilder.HasConversion(new EncryptionConverter(dataProtector));
 }
