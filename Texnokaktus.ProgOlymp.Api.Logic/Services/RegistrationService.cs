@@ -19,9 +19,9 @@ public class RegistrationService(IContestService contestService,
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
     private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
 
-    public async Task<ContestRegistrationState?> GetRegistrationStateAsync(int contestId)
+    public async Task<ContestRegistrationState?> GetRegistrationStateAsync(string contestName)
     {
-        if (await contestService.GetContestAsync(contestId) is not { } contest) return null;
+        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
 
         return new(contest.Id,
                    contest.Name,
@@ -30,44 +30,44 @@ public class RegistrationService(IContestService contestService,
                    GetState(contest, timeProvider.GetUtcNow()));
     }
 
-    public Task<bool> IsUserRegisteredAsync(int contestId, int userId) =>
-        unitOfWork.ApplicationRepository.ExistsAsync(application => application.ContestId == contestId
+    public Task<bool> IsUserRegisteredAsync(string contestName, int userId) =>
+        unitOfWork.ApplicationRepository.ExistsAsync(application => application.Contest.Name == contestName
                                                                  && application.UserId == userId);
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
+        var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
+                   ?? throw new ContestNotFoundException(userInsertModel.ContestName);
+
         var uid = Guid.NewGuid();
 
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow(), uid));
+        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow(), uid, contest.Id));
 
         await unitOfWork.SaveChangesAsync();
 
         _registeredUsers.Add(1,
-                             KeyValuePair.Create<string, object?>("contestId", userInsertModel.ContestId),
+                             KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
 
         var user = await userService.GetByIdAsync(userInsertModel.UserId)
                 ?? throw new UserNotFoundException(userInsertModel.UserId);
 
-        await RegisterUserToPreliminaryStageAsync(userInsertModel.ContestId, user.Login, uid.ToString("N"));
+        await RegisterUserToPreliminaryStageAsync(contest, user.Login, uid.ToString("N"));
 
         return entity.Id;
     }
 
-    public async Task<ContestApplications?> GetContestApplicationsAsync(int contestId)
+    public async Task<ContestApplications?> GetContestApplicationsAsync(string contestName)
     {
-        if (await contestService.GetContestAsync(contestId) is not { } contest) return null;
+        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
 
-        var applications = await unitOfWork.ApplicationRepository.GetApplicationsAsync(contestId);
+        var applications = await unitOfWork.ApplicationRepository.GetApplicationsAsync(contestName);
 
         return new(contest, applications.Select(application => application.MapDomainApplication()));
     }
 
-    private async Task RegisterUserToPreliminaryStageAsync(int contestId, string login, string? displayName)
+    private async Task RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
     {
-        if (await contestService.GetContestAsync(contestId) is not { } contest)
-            throw new ContestNotFoundException(contestId);
-
         await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
     }
@@ -86,9 +86,9 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created, Guid uid) =>
+    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created, Guid uid, int contestId) =>
         new(userInsertModel.UserId,
-            userInsertModel.ContestId,
+            contestId,
             uid,
             created,
             userInsertModel.Name.MapName(),

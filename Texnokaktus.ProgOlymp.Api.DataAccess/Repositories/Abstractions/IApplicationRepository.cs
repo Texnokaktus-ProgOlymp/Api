@@ -6,7 +6,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories.Abstractions;
 
 public interface IApplicationRepository
 {
-    Task<Application[]> GetApplicationsAsync(int contestId);
+    Task<Application[]> GetApplicationsAsync(string contestName);
     Application Add(ApplicationInsertModel insertModel);
     Task<bool> ExistsAsync(Expression<Func<Application, bool>> predicate);
 }

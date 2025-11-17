@@ -49,8 +49,7 @@ builder.Services
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddTexnokaktusOpenTelemetry(builder.Configuration,
-                                             "API",
+builder.Services.AddTexnokaktusOpenTelemetry("API",
                                              null,
                                              meterProviderBuilder => meterProviderBuilder.AddMeter(Texnokaktus.ProgOlymp.Api.Logic.Observability.Constants.MeterName));
 
@@ -77,8 +76,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapGrpcHealthChecksService();
 

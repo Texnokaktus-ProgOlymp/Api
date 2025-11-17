@@ -10,13 +10,13 @@ public class ParticipationService(IUserService userService,
                                   IContestDataServiceClient contestDataServiceClient,
                                   IResultService resultService) : IParticipationService
 {
-    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, int contestId)
+    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, string contestName)
     {
-        if (!await registrationService.IsUserRegisteredAsync(contestId, userId))
+        if (!await registrationService.IsUserRegisteredAsync(contestName, userId))
             return new(false, null, null);
 
         var user = await userService.GetRequiredUserAsync(userId);
-        var contest = await contestService.GetRequiredContestAsync(contestId);
+        var contest = await contestService.GetRequiredContestAsync(contestName);
 
         var preliminaryParticipation = await GetContestStageParticipationAsync(user.Login, contest.PreliminaryStage);
 

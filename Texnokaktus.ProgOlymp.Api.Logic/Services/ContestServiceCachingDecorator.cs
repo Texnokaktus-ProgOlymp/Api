@@ -13,18 +13,18 @@ public class ContestServiceCachingDecorator(IContestService contestService, IMem
                                            long? finalStageId)
     {
         var id = await contestService.AddContestAsync(name, registrationStart, registrationFinish, preliminaryStageId, finalStageId);
-        memoryCache.Remove(GetKey(id));
+        memoryCache.Remove(GetKey(name));
 
         return id;
     }
 
-    public Task<Contest?> GetContestAsync(int id) =>
-        memoryCache.GetOrCreateAsync(GetKey(id),
+    public Task<Contest?> GetContestAsync(string contestName) =>
+        memoryCache.GetOrCreateAsync(GetKey(contestName),
                                      entry =>
                                      {
                                          entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
-                                         return contestService.GetContestAsync(id);
+                                         return contestService.GetContestAsync(contestName);
                                      });
 
-    private static string GetKey(int contestId) => $"Contests:{contestId}";
+    private static string GetKey(string contestName) => $"Contests:{contestName}";
 }

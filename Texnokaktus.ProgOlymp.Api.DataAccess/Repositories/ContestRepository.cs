@@ -15,6 +15,13 @@ public class ContestRepository(AppDbContext context) : IContestRepository
                .Include(contest => contest.FinalStage)
                .FirstOrDefaultAsync(contest => contest.Id == id);
 
+    public Task<Contest?> GetByName(string name) =>
+        context.Contests
+               .AsNoTracking()
+               .Include(contest => contest.PreliminaryStage)
+               .Include(contest => contest.FinalStage)
+               .FirstOrDefaultAsync(contest => contest.Name == name);
+
     public Contest AddContest(ContestInsertModel insertModel)
     {
         var entity = new Contest

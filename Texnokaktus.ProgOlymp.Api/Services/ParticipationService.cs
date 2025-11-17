@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Services;
@@ -6,12 +7,12 @@ namespace Texnokaktus.ProgOlymp.Api.Services;
 public class ParticipationService(Logic.Services.Abstractions.IParticipationService participationService,
                                   Logic.Services.Abstractions.IContestService contestService) : IParticipationService
 {
-    public async Task<Results<Ok<Domain.ContestParticipation>, NotFound>> GetParticipationAsync(int userId, int contestId)
+    public async Task<Results<Ok<ContestParticipation>, NotFound>> GetParticipationAsync(int userId, string contestName)
     {
-        if (await contestService.GetContestAsync(contestId) is not { } contest)
+        if (await contestService.GetContestAsync(contestName) is null)
             return TypedResults.NotFound();
 
-        var participation = await participationService.GetContestParticipationAsync(userId, contestId);
+        var participation = await participationService.GetContestParticipationAsync(userId, contestName);
 
         return TypedResults.Ok(participation);
     }

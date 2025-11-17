@@ -6,17 +6,17 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class ParticipationServiceCachingDecorator(IParticipationService service, IMemoryCache memoryCache) : IParticipationService
 {
-    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, int contestId)
+    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, string contestName)
     {
-        if (memoryCache.Get<ContestParticipation>(GetKey(userId, contestId)) is { } contestParticipation)
+        if (memoryCache.Get<ContestParticipation>(GetKey(userId, contestName)) is { } contestParticipation)
             return contestParticipation;
 
-        var participation = await service.GetContestParticipationAsync(userId, contestId);
+        var participation = await service.GetContestParticipationAsync(userId, contestName);
 
         return participation.IsUserRegistered
-                   ? memoryCache.Set(GetKey(userId, contestId), participation, TimeSpan.FromMinutes(2.5))
+                   ? memoryCache.Set(GetKey(userId, contestName), participation, TimeSpan.FromMinutes(2.5))
                    : participation;
     }
 
-    private static string GetKey(int userId, int contestId) => $"Contests:{contestId}:Users:{userId}:Participation";
+    private static string GetKey(int userId, string contestName) => $"Contests:{contestName}:Users:{userId}:Participation";
 }

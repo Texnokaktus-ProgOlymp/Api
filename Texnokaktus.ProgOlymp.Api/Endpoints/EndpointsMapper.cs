@@ -11,21 +11,21 @@ internal static class EndpointsMapper
 {
     public static IEndpointRouteBuilder MapContestEndpoints(this IEndpointRouteBuilder builder)
     {
-        var group = builder.MapGroup("contests/{contestId:int}");
+        var group = builder.MapGroup("contests/{contestName}");
 
         group.MapGet("",
-                     (int contestId, IRegistrationService registrationStateService) =>
-                         registrationStateService.GetRegistrationStateAsync(contestId));
+                     (string contestName, IRegistrationService registrationStateService) =>
+                         registrationStateService.GetRegistrationStateAsync(contestName));
 
         group.MapPost("register",
-                      (int contestId, ApplicationInsertModel model, HttpContext context, IRegistrationService service)
-                          => service.RegisterUserAsync(contestId, context.GetUserId(), model))
+                      (string contestName, ApplicationInsertModel model, HttpContext context, IRegistrationService service)
+                          => service.RegisterUserAsync(contestName, context.GetUserId(), model))
              .AddEndpointFilter<ValidationFilter<ApplicationInsertModel>>()
              .RequireAuthorization();
 
         group.MapGet("participation",
-                     (int contestId, IParticipationService participationService, HttpContext context)
-                         => participationService.GetParticipationAsync(context.GetUserId(), contestId))
+                     (string contestName, IParticipationService participationService, HttpContext context)
+                         => participationService.GetParticipationAsync(context.GetUserId(), contestName))
              .RequireAuthorization();
 
         return builder;

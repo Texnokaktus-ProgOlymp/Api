@@ -11,6 +11,8 @@ public interface IContestService
                               long? preliminaryStageId,
                               long? finalStageId);
 
-    Task<Contest?> GetContestAsync(int id);
-    async Task<Contest> GetRequiredContestAsync(int id) => await GetContestAsync(id) ?? throw new ContestNotFoundException(id);
+    Task<Contest?> GetContestAsync(string contestName);
+
+    async Task<Contest> GetRequiredContestAsync(string contestName) =>
+        await GetContestAsync(contestName) ?? throw new ContestNotFoundException(contestName);
 }

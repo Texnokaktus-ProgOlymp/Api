@@ -6,6 +6,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories.Abstractions;
 public interface IContestRepository
 {
     Task<Contest?> GetById(int id);
+    Task<Contest?> GetByName(string name);
     Contest AddContest(ContestInsertModel insertModel);
     Task<bool> UpdateAsync(int id, Func<Contest, bool> updateAction);
 }

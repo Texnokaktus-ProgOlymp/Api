@@ -7,6 +7,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Hosted;
 
 public class MetricsInitService(IServiceProvider serviceProvider) : BackgroundService
 {
+    /*
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -23,4 +24,6 @@ public class MetricsInitService(IServiceProvider serviceProvider) : BackgroundSe
                                        KeyValuePair.Create<string, object?>("contestId", application.ContestId),
                                        KeyValuePair.Create<string, object?>("regionId", application.RegionId));
     }
+    */
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
 }

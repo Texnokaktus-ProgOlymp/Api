@@ -1,7 +1,7 @@
 namespace Texnokaktus.ProgOlymp.Api.Logic.Models;
 
 public record ApplicationInsertModel(int UserId,
-                                     int ContestId,
+                                     string ContestName,
                                      Name Name,
                                      DateOnly BirthDate,
                                      string Snils,

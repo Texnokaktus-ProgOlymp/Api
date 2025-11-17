@@ -44,9 +44,9 @@ internal class ContestService(IUnitOfWork unitOfWork, IContestDataServiceClient 
         return contest.Id;
     }
 
-    public async Task<Contest?> GetContestAsync(int id)
+    public async Task<Contest?> GetContestAsync(string contestName)
     {
-        var contest = await unitOfWork.ContestRepository.GetById(id);
+        var contest = await unitOfWork.ContestRepository.GetByName(contestName);
         return contest?.MapContest();
     }
 }

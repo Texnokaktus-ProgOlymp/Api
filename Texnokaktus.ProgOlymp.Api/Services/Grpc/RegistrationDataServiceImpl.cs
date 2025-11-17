@@ -9,7 +9,7 @@ namespace Texnokaktus.ProgOlymp.Api.Services.Grpc;
 public class RegistrationDataServiceImpl(IRegistrationService registrationService) : RegistrationDataService.RegistrationDataServiceBase
 {
     public override async Task<GetRegistrationsResponse> GetRegistrations(GetRegistrationsRequest request, ServerCallContext context) =>
-        await registrationService.GetContestApplicationsAsync(request.ContestId) is { } contestApplications
+        await registrationService.GetContestApplicationsAsync(request.ContestName) is { } contestApplications
             ? new GetRegistrationsResponse
             {
                 Result = new()
@@ -24,7 +24,7 @@ public class RegistrationDataServiceImpl(IRegistrationService registrationServic
                     }
                 }
             }
-            : throw new RpcException(new(StatusCode.NotFound, $"Contest with Id {request.ContestId} was not found"));
+            : throw new RpcException(new(StatusCode.NotFound, $"Contest {request.ContestName} was not found"));
 }
 
 file static class MappingExtensions

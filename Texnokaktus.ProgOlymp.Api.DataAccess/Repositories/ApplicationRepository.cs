@@ -9,12 +9,12 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Repositories;
 
 public class ApplicationRepository(AppDbContext context) : IApplicationRepository
 {
-    public Task<Application[]> GetApplicationsAsync(int contestId) =>
+    public Task<Application[]> GetApplicationsAsync(string contestName) =>
         context.Applications
                .AsNoTracking()
                .Include(application => application.User)
                .Include(application => application.Region)
-               .Where(application => application.ContestId == contestId)
+               .Where(application => application.Contest.Name == contestName)
                .ToArrayAsync();
 
     public Application Add(ApplicationInsertModel insertModel)
