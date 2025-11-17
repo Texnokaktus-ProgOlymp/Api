@@ -97,7 +97,8 @@ jobs:
     
     needs: docker
     runs-on: cttit
-    if: github.ref == 'refs/heads/master'
+    # if: github.ref == 'refs/heads/master'
+    if: false
     
     env:
       IMAGE: ${{ needs.docker.outputs.name }}
