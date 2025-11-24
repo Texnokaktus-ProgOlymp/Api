@@ -6,7 +6,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 internal class RegionServiceCachingDecorator(IRegionService regionService, IMemoryCache memoryCache) : IRegionService
 {
-    public async Task<IEnumerable<Region>> GetAllRegionsAsync() =>
+    public async Task<Region[]> GetAllRegionsAsync() =>
         await memoryCache.GetOrCreateAsync("Regions:All",
                                            entry =>
                                            {

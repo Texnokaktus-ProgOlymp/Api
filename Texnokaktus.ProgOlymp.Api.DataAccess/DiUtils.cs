@@ -14,7 +14,6 @@ public static class DiUtils
                                                    Action<DbContextOptionsBuilder> optionsAction) =>
         serviceCollection.AddDbContext<AppDbContext>(optionsAction)
                          .AddScoped<IUnitOfWork, UnitOfWork>()
-                         .AddScoped<IRegionRepository, RegionRepository>()
                          .AddScoped<IApplicationRepository, ApplicationRepository>()
                          .AddScoped<IContestRepository, ContestRepository>()
                          .AddScoped<IUserRepository, UserRepository>();
