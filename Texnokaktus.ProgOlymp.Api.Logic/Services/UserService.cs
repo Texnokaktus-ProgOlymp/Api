@@ -21,29 +21,25 @@ public class UserService(AppDbContext context, IYandexIdUserServiceClient yandex
     public async Task<User> AuthenticateUserAsync(string code)
     {
         var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
-        var dbUser = await ConvertToDbUserAsync(user);
+
+        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Login == user.Login)
+                  ?? context.Users
+                            .Add(new()
+                             {
+                                 Login = user.Login,
+                                 DisplayName = user.DisplayName,
+                                 DefaultAvatar = user.Avatar?.AvatarId,
+                                 Created = timeProvider.GetUtcNow()
+                             })
+                            .Entity;
+
+        dbUser.DisplayName = user.DisplayName;
+        dbUser.DefaultAvatar = user.Avatar?.AvatarId;
         await context.SaveChangesAsync();
+
         _authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
 
         return dbUser.MapUser();
-    }
-
-    private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User grpcUser)
-    {
-        var user = await context.Users.FirstOrDefaultAsync(user => user.Login == grpcUser.Login)
-                ?? context.Users
-                          .Add(new()
-                           {
-                               Login = grpcUser.Login,
-                               DisplayName = grpcUser.DisplayName,
-                               DefaultAvatar = grpcUser.Avatar?.AvatarId,
-                               Created = timeProvider.GetUtcNow()
-                           })
-                          .Entity;
-
-        user.DisplayName = grpcUser.DisplayName;
-        user.DefaultAvatar = grpcUser.Avatar?.AvatarId;
-        return user;
     }
 }
 
