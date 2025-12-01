@@ -8,6 +8,4 @@ public interface IContestDataServiceClient
     Task<ContestDescription> GetContestAsync(long contestId);
     Task<IEnumerable<ContestProblem>> GetContestProblemsAsync(long contestId);
     Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch);
-    Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, string participantLogin);
-    Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, string participantLogin);
 }

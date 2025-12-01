@@ -4,12 +4,12 @@ using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class ResultService(IContestDataServiceClient contestDataServiceClient) : IResultService
+public class ResultService(IContestDataServiceClient contestDataServiceClient, IParticipantServiceClient participantServiceClient) : IResultService
 {
-    public async Task<ContestResults> GetContestResultsAsync(string login, long contestStageId)
+    public async Task<ContestResults> GetContestResultsAsync(long contestStageId, int participantId)
     {
         var problems = await contestDataServiceClient.GetContestProblemsAsync(contestStageId);
-        var stats = await contestDataServiceClient.GetParticipantStatsAsync(contestStageId, login);
+        var stats = await participantServiceClient.GetParticipantStatsAsync(contestStageId, participantId);
 
         var problemResults = problems.GroupJoin(stats.Runs,
                                                 problem => problem.Id,

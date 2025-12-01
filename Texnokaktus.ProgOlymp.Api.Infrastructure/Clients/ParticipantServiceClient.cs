@@ -1,0 +1,31 @@
+using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexContest;
+
+namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
+
+public class ParticipantServiceClient(ParticipantService.ParticipantServiceClient client) : IParticipantServiceClient
+{
+    public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, int participantId)
+    {
+        var request = new ParticipantStatusRequest
+        {
+            ContestId = contestStageId,
+            ParticipantId = participantId
+        };
+
+        var response = await client.GetParticipantStatusAsync(request);
+        return response.Result;
+    }
+
+    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId)
+    {
+        var request = new ParticipantStatsRequest
+        {
+            ContestId = contestStageId,
+            ParticipantId = participantId
+        };
+
+        var response = await client.GetParticipantStatsAsync(request);
+        return response.Result;
+    }
+}

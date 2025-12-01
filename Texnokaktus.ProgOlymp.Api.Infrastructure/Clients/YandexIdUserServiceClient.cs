@@ -1,6 +1,7 @@
+using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexId;
 
-namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 
 public class YandexIdUserServiceClient(UserService.UserServiceClient client) : IYandexIdUserServiceClient
 {
