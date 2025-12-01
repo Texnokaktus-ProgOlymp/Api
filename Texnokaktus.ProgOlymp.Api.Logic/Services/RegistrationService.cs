@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
@@ -15,7 +14,6 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
                                  TimeProvider timeProvider,
-                                 IUnitOfWork unitOfWork,
                                  IUserService userService,
                                  AppDbContext context) : IRegistrationService
 {
@@ -81,7 +79,7 @@ public class RegistrationService(IContestService contestService,
                              })
                             .Entity;
 
-        await unitOfWork.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
         _registeredUsers.Add(1,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),

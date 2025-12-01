@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Observability;
@@ -7,34 +8,42 @@ using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
+public class UserService(AppDbContext context, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
 {
     private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
 
-    public async Task<User?> GetByIdAsync(int id)
-    {
-        var user = await unitOfWork.UserRepository.GetUserByIdAsync(id);
-        return user?.MapUser();
-    }
+    public async Task<User?> GetByIdAsync(int id) =>
+        await context.Users
+                     .Where(user => user.Id == id)
+                     .Select(user => user.MapUser())
+                     .FirstOrDefaultAsync();
 
     public async Task<User> AuthenticateUserAsync(string code)
     {
         var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
         var dbUser = await ConvertToDbUserAsync(user);
-        await unitOfWork.SaveChangesAsync();
+        await context.SaveChangesAsync();
         _authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
 
         return dbUser.MapUser();
     }
 
-    private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User user)
+    private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User grpcUser)
     {
-        if (await unitOfWork.UserRepository.GetUserByLoginAsync(user.Login) is not { } dbUser)
-            return unitOfWork.UserRepository.AddUser(new(user.Login, user.DisplayName, user.Avatar?.AvatarId, timeProvider.GetUtcNow()));
+        var user = await context.Users.FirstOrDefaultAsync(user => user.Login == grpcUser.Login)
+                ?? context.Users
+                          .Add(new()
+                           {
+                               Login = grpcUser.Login,
+                               DisplayName = grpcUser.DisplayName,
+                               DefaultAvatar = grpcUser.Avatar?.AvatarId,
+                               Created = timeProvider.GetUtcNow()
+                           })
+                          .Entity;
 
-        dbUser.DisplayName = user.DisplayName;
-        dbUser.DefaultAvatar = user.Avatar?.AvatarId;
-        return dbUser;
+        user.DisplayName = grpcUser.DisplayName;
+        user.DefaultAvatar = grpcUser.Avatar?.AvatarId;
+        return user;
     }
 }
 
