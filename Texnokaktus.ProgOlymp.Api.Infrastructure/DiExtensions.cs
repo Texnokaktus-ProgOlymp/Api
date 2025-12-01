@@ -18,6 +18,7 @@ public static class DiExtensions
         services.AddGrpcClient<UserService.UserServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(UserService)));
 
         return services.AddScoped<IContestDataServiceClient, ContestDataServiceClient>()
+                       .AddScoped<IParticipantServiceClient, ParticipantServiceClient>()
                        .AddScoped<IRegistrationServiceClient, RegistrationServiceClient>()
                        .AddScoped<IYandexIdUserServiceClient, YandexIdUserServiceClient>();
     }
