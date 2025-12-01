@@ -22,7 +22,7 @@ public class RegistrationService(IContestService contestService, IRegistrationSe
 
     public async Task<Results<Created, NotFound, Conflict>> RegisterUserAsync(string contestName, int userId, ApplicationInsertModel insertModel)
     {
-        if (await contestService.GetContestAsync(contestName) is null)
+        if (!await contestService.IsContestExistAsync(contestName))
             return TypedResults.NotFound();
 
         if (await registrationService.GetRegistrationStateAsync(contestName) is { State: not RegistrationState.InProgress })

@@ -129,7 +129,7 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
+    public static Application MapDomainApplication(this DataAccess.Entities.Application application) =>
         new(application.Id,
             application.Uid,
             application.User.MapUser(),
@@ -139,7 +139,7 @@ file static class MappingExtensions
             application.Teacher.MapTeacherData(),
             application.PersonalDataConsent);
 
-    private static Domain.ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
+    private static ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
         new(new(application.FirstName,
                 application.LastName,
                 application.Patronym),
@@ -151,14 +151,14 @@ file static class MappingExtensions
             application.Region.Name,
             application.Grade);
 
-    private static Domain.ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
+    private static ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
         new(new(parent.FirstName,
                 parent.LastName,
                 parent.Patronym),
             parent.Email,
             parent.Phone);
 
-    private static Domain.TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
+    private static TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
         new(new(teacher.FirstName,
                 teacher.LastName,
                 teacher.Patronym),

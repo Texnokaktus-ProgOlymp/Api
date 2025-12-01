@@ -56,6 +56,9 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
                .Include(contest => contest.FinalStage)
                .Select(contest => contest.MapContest())
                .FirstOrDefaultAsync(contest => contest.Name == contestName);
+
+    public Task<bool> IsContestExistAsync(string contestName) =>
+        context.Contests.AnyAsync(contest => contest.Name == contestName);
 }
 
 file static class MappingExtensions

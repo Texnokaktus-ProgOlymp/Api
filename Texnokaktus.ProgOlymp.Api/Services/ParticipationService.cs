@@ -9,7 +9,7 @@ public class ParticipationService(Logic.Services.Abstractions.IParticipationServ
 {
     public async Task<Results<Ok<ContestParticipation>, NotFound>> GetParticipationAsync(int userId, string contestName)
     {
-        if (await contestService.GetContestAsync(contestName) is null)
+        if (!await contestService.IsContestExistAsync(contestName))
             return TypedResults.NotFound();
 
         var participation = await participationService.GetContestParticipationAsync(userId, contestName);

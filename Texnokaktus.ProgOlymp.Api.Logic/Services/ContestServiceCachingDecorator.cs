@@ -14,6 +14,7 @@ public class ContestServiceCachingDecorator(IContestService contestService, IMem
     {
         var id = await contestService.AddContestAsync(name, registrationStart, registrationFinish, preliminaryStageId, finalStageId);
         memoryCache.Remove(GetKey(name));
+        memoryCache.Remove(GetExistenceKey(name));
 
         return id;
     }
@@ -26,5 +27,14 @@ public class ContestServiceCachingDecorator(IContestService contestService, IMem
                                          return contestService.GetContestAsync(contestName);
                                      });
 
+    public Task<bool> IsContestExistAsync(string contestName) =>
+        memoryCache.GetOrCreateAsync(GetExistenceKey(contestName),
+                                     entry =>
+                                     {
+                                         entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+                                         return contestService.IsContestExistAsync(contestName);
+                                     });
+
     private static string GetKey(string contestName) => $"Contests:{contestName}";
+    private static string GetExistenceKey(string contestName) => $"Contests:{contestName}:Exists";
 }
