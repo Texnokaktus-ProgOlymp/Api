@@ -4,7 +4,6 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 
 public interface IUnitOfWork
 {
-    IApplicationRepository ApplicationRepository { get; }
     IContestRepository ContestRepository { get; }
     IUserRepository UserRepository { get; }
     Task<int> SaveChangesAsync();

@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
@@ -14,7 +16,8 @@ public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
                                  TimeProvider timeProvider,
                                  IUnitOfWork unitOfWork,
-                                 IUserService userService) : IRegistrationService
+                                 IUserService userService,
+                                 AppDbContext context) : IRegistrationService
 {
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
     private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
@@ -31,8 +34,8 @@ public class RegistrationService(IContestService contestService,
     }
 
     public Task<bool> IsUserRegisteredAsync(string contestName, int userId) =>
-        unitOfWork.ApplicationRepository.ExistsAsync(application => application.Contest.Name == contestName
-                                                                 && application.UserId == userId);
+        context.Applications.AnyAsync(application => application.Contest.Name == contestName
+                                                  && application.UserId == userId);
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
@@ -41,7 +44,42 @@ public class RegistrationService(IContestService contestService,
 
         var uid = Guid.NewGuid();
 
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow(), uid, contest.Id));
+        var entity = context.Applications
+                            .Add(new()
+                             {
+                                 UserId = userInsertModel.UserId,
+                                 ContestId = contest.Id,
+                                 Uid = uid,
+                                 Created = timeProvider.GetUtcNow(),
+                                 FirstName = userInsertModel.Name.FirstName,
+                                 LastName = userInsertModel.Name.LastName,
+                                 Patronym = userInsertModel.Name.Patronym,
+                                 BirthDate = userInsertModel.BirthDate,
+                                 Snils = userInsertModel.Snils,
+                                 Email = userInsertModel.Email,
+                                 SchoolName = userInsertModel.SchoolName,
+                                 RegionId = userInsertModel.RegionId,
+                                 Parent = new()
+                                 {
+                                     FirstName = userInsertModel.Parent.Name.FirstName,
+                                     LastName = userInsertModel.Parent.Name.LastName,
+                                     Patronym = userInsertModel.Parent.Name.Patronym,
+                                     Email = userInsertModel.Parent.Email,
+                                     Phone = userInsertModel.Parent.Phone
+                                 },
+                                 Teacher = new()
+                                 {
+                                     School = userInsertModel.Teacher.School,
+                                     FirstName = userInsertModel.Teacher.Name.FirstName,
+                                     LastName = userInsertModel.Teacher.Name.LastName,
+                                     Patronym = userInsertModel.Teacher.Name.Patronym,
+                                     Email = userInsertModel.Teacher.Email,
+                                     Phone = userInsertModel.Teacher.Phone
+                                 },
+                                 PersonalDataConsent = userInsertModel.PersonalDataConsent,
+                                 Grade = userInsertModel.Grade
+                             })
+                            .Entity;
 
         await unitOfWork.SaveChangesAsync();
 
@@ -61,9 +99,14 @@ public class RegistrationService(IContestService contestService,
     {
         if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
 
-        var applications = await unitOfWork.ApplicationRepository.GetApplicationsAsync(contestName);
+        var applications = await context.Applications
+                                        .Include(application => application.User)
+                                        .Include(application => application.Region)
+                                        .Where(application => application.Contest.Name == contestName)
+                                        .Select(application => application.MapDomainApplication())
+                                        .ToArrayAsync();
 
-        return new(contest, applications.Select(application => application.MapDomainApplication()));
+        return new(contest, applications);
     }
 
     private async Task RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
@@ -86,41 +129,6 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created, Guid uid, int contestId) =>
-        new(userInsertModel.UserId,
-            contestId,
-            uid,
-            created,
-            userInsertModel.Name.MapName(),
-            userInsertModel.BirthDate,
-            userInsertModel.Snils,
-            userInsertModel.Email,
-            userInsertModel.SchoolName,
-            userInsertModel.RegionId,
-            userInsertModel.Parent.MapThirdPerson(),
-            userInsertModel.Teacher.MapTeacher(),
-            userInsertModel.PersonalDataConsent,
-            userInsertModel.Grade);
-
-    private static DataAccess.Models.Teacher MapTeacher(this Teacher teacher)
-    {
-        var thirdPerson = teacher.MapThirdPerson();
-        return new(thirdPerson.Name,
-                   thirdPerson.Email,
-                   thirdPerson.Phone,
-                   teacher.School);
-    }
-
-    private static DataAccess.Models.ThirdPerson MapThirdPerson(this Models.ThirdPerson thirdPerson) =>
-        new(thirdPerson.Name.MapName(),
-            thirdPerson.Email,
-            thirdPerson.Phone);
-
-    private static DataAccess.Models.Name MapName(this Models.Name name) =>
-        new(name.FirstName,
-            name.LastName,
-            name.Patronym);
-
     public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
         new(application.Id,
             application.Uid,
