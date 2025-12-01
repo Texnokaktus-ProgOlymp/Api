@@ -1,11 +1,12 @@
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
-using Texnokaktus.ProgOlymp.Api.Domain;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-internal class ContestService(IUnitOfWork unitOfWork, IContestDataServiceClient contestDataServiceClient) : IContestService
+internal class ContestService(AppDbContext context, IContestDataServiceClient contestDataServiceClient) : IContestService
 {
     public async Task<int> AddContestAsync(string name,
                                            DateTimeOffset registrationStart,
@@ -13,7 +14,12 @@ internal class ContestService(IUnitOfWork unitOfWork, IContestDataServiceClient 
                                            long? preliminaryStageId,
                                            long? finalStageId)
     {
-        var contest = unitOfWork.ContestRepository.AddContest(new(name, registrationStart, registrationFinish));
+        var contest = new Contest
+        {
+            Name = name,
+            RegistrationStart = registrationStart,
+            RegistrationFinish = registrationFinish
+        };
 
         if (preliminaryStageId.HasValue)
         {
@@ -39,21 +45,22 @@ internal class ContestService(IUnitOfWork unitOfWork, IContestDataServiceClient 
             };
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
         return contest.Id;
     }
 
-    public async Task<Contest?> GetContestAsync(string contestName)
-    {
-        var contest = await unitOfWork.ContestRepository.GetByName(contestName);
-        return contest?.MapContest();
-    }
+    public Task<Domain.Contest?> GetContestAsync(string contestName) =>
+        context.Contests
+               .Include(contest => contest.PreliminaryStage)
+               .Include(contest => contest.FinalStage)
+               .Select(contest => contest.MapContest())
+               .FirstOrDefaultAsync(contest => contest.Name == contestName);
 }
 
 file static class MappingExtensions
 {
-    public static Contest MapContest(this DataAccess.Entities.Contest contest) =>
+    public static Domain.Contest MapContest(this Contest contest) =>
         new(contest.Id,
             contest.Name,
             contest.RegistrationStart,
@@ -61,7 +68,7 @@ file static class MappingExtensions
             contest.PreliminaryStage?.MapContestStage(),
             contest.FinalStage?.MapContestStage());
 
-    private static ContestStage MapContestStage(this DataAccess.Entities.ContestStage contestStage) =>
+    private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
         new(contestStage.Id,
             contestStage.Name,
             contestStage.ContestStart,
