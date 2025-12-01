@@ -14,7 +14,6 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
                                  TimeProvider timeProvider,
-                                 IUserService userService,
                                  AppDbContext context) : IRegistrationService
 {
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
@@ -39,6 +38,12 @@ public class RegistrationService(IContestService contestService,
     {
         var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
                    ?? throw new ContestNotFoundException(userInsertModel.ContestName);
+
+        var userLogin = await context.Users
+                                     .Where(user => user.Id == userInsertModel.UserId)
+                                     .Select(user => user.Login)
+                                     .FirstOrDefaultAsync()
+                     ?? throw new UserNotFoundException(userInsertModel.UserId);
 
         var uid = Guid.NewGuid();
 
@@ -85,10 +90,7 @@ public class RegistrationService(IContestService contestService,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
 
-        var user = await userService.GetByIdAsync(userInsertModel.UserId)
-                ?? throw new UserNotFoundException(userInsertModel.UserId);
-
-        await RegisterUserToPreliminaryStageAsync(contest, user.Login, uid.ToString("N"));
+        await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N"));
 
         return entity.Id;
     }
