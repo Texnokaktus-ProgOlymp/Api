@@ -5,6 +5,17 @@ namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 
 public class ParticipantServiceClient(ParticipantService.ParticipantServiceClient client) : IParticipantServiceClient
 {
+    public async Task<IEnumerable<ParticipantInfo>> GetContestParticipantsAsync(long contestStageId)
+    {
+        var request = new ContestParticipantsRequest()
+        {
+            ContestId = contestStageId
+        };
+
+        var response = await client.GetContestParticipantsAsync(request);
+        return response.Result;
+    }
+
     public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, int participantId)
     {
         var request = new ParticipantStatusRequest
