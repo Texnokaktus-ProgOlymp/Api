@@ -37,8 +37,8 @@ public class RegistrationService(IContestService contestService,
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
-        var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
-                   ?? throw new ContestNotFoundException(userInsertModel.ContestName);
+        var contest = await contestService.GetRequiredContestAsync(userInsertModel.ContestName);
+        var user = await userService.GetRequiredUserAsync(userInsertModel.UserId);
 
         var uid = Guid.NewGuid();
 
@@ -84,9 +84,6 @@ public class RegistrationService(IContestService contestService,
         _registeredUsers.Add(1,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
-
-        var user = await userService.GetByIdAsync(userInsertModel.UserId)
-                ?? throw new UserNotFoundException(userInsertModel.UserId);
 
         await RegisterUserToPreliminaryStageAsync(contest, user.Login, uid.ToString("N"));
 

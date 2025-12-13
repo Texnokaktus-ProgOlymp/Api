@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
@@ -6,7 +7,7 @@ using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-internal class ContestService(AppDbContext context, IContestDataServiceClient contestDataServiceClient) : IContestService
+internal class ContestService(AppDbContext context, IContestDataServiceClient contestDataServiceClient, IMemoryCache memoryCache) : IContestService
 {
     public async Task<int> AddContestAsync(string name,
                                            DateTimeOffset registrationStart,
@@ -46,16 +47,24 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
         }
 
         await context.SaveChangesAsync();
+        memoryCache.Remove(GetKey(name));
 
         return contest.Id;
     }
 
     public Task<Domain.Contest?> GetContestAsync(string contestName) =>
-        context.Contests
-               .Include(contest => contest.PreliminaryStage)
-               .Include(contest => contest.FinalStage)
-               .Select(contest => contest.MapContest())
-               .FirstOrDefaultAsync(contest => contest.Name == contestName);
+        memoryCache.GetOrCreateAsync(GetKey(contestName),
+                                     entry =>
+                                     {
+                                         entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+                                         return context.Contests
+                                                       .Include(contest => contest.PreliminaryStage)
+                                                       .Include(contest => contest.FinalStage)
+                                                       .Select(contest => contest.MapContest())
+                                                       .FirstOrDefaultAsync(contest => contest.Name == contestName);
+                                     });
+
+    private static string GetKey(string contestName) => $"Contests:{contestName}";
 }
 
 file static class MappingExtensions
