@@ -10,6 +10,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 internal class ContestService(AppDbContext context, IContestDataServiceClient contestDataServiceClient, IMemoryCache memoryCache) : IContestService
 {
     public async Task<int> AddContestAsync(string name,
+                                           string title,
                                            DateTimeOffset registrationStart,
                                            DateTimeOffset registrationFinish,
                                            long? preliminaryStageId,
@@ -18,6 +19,7 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
         var contest = new Contest
         {
             Name = name,
+            Title = title,
             RegistrationStart = registrationStart,
             RegistrationFinish = registrationFinish
         };
