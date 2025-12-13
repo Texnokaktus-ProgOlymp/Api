@@ -47,6 +47,8 @@ public class RegistrationService(IContestService contestService,
 
         var uid = Guid.NewGuid();
 
+        await using var transaction = await context.Database.BeginTransactionAsync();
+
         var entity = context.Applications
                             .Add(new()
                              {
@@ -86,11 +88,13 @@ public class RegistrationService(IContestService contestService,
 
         await context.SaveChangesAsync();
 
+        await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N"));
+
+        await transaction.CommitAsync();
+
         _registeredUsers.Add(1,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
-
-        await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N"));
 
         return entity.Id;
     }
