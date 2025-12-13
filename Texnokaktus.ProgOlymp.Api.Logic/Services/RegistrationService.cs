@@ -14,7 +14,6 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
                                  TimeProvider timeProvider,
-                                 IUserService userService,
                                  AppDbContext context) : IRegistrationService
 {
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
@@ -37,8 +36,14 @@ public class RegistrationService(IContestService contestService,
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
-        var contest = await contestService.GetRequiredContestAsync(userInsertModel.ContestName);
-        var user = await userService.GetRequiredUserAsync(userInsertModel.UserId);
+        var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
+                   ?? throw new ContestNotFoundException(userInsertModel.ContestName);
+
+        var userLogin = await context.Users
+                                     .Where(user => user.Id == userInsertModel.UserId)
+                                     .Select(user => user.Login)
+                                     .FirstOrDefaultAsync()
+                     ?? throw new UserNotFoundException(userInsertModel.UserId);
 
         var uid = Guid.NewGuid();
 
@@ -85,7 +90,7 @@ public class RegistrationService(IContestService contestService,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
 
-        await RegisterUserToPreliminaryStageAsync(contest, user.Login, uid.ToString("N"));
+        await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N"));
 
         return entity.Id;
     }
@@ -124,7 +129,7 @@ public class RegistrationService(IContestService contestService,
 
 file static class MappingExtensions
 {
-    public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
+    public static Application MapDomainApplication(this DataAccess.Entities.Application application) =>
         new(application.Id,
             application.Uid,
             application.User.MapUser(),
@@ -134,7 +139,7 @@ file static class MappingExtensions
             application.Teacher.MapTeacherData(),
             application.PersonalDataConsent);
 
-    private static Domain.ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
+    private static ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
         new(new(application.FirstName,
                 application.LastName,
                 application.Patronym),
@@ -146,14 +151,14 @@ file static class MappingExtensions
             application.Region.Name,
             application.Grade);
 
-    private static Domain.ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
+    private static ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
         new(new(parent.FirstName,
                 parent.LastName,
                 parent.Patronym),
             parent.Email,
             parent.Phone);
 
-    private static Domain.TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
+    private static TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
         new(new(teacher.FirstName,
                 teacher.LastName,
                 teacher.Patronym),

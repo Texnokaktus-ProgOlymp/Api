@@ -1,29 +1,37 @@
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class ParticipationService(IUserService userService,
-                                  IRegistrationService registrationService,
-                                  IContestService contestService,
-                                  IParticipantServiceClient participantServiceClient,
-                                  IResultService resultService) : IParticipationService
+public class ParticipationService(IParticipantServiceClient participantServiceClient,
+                                  IResultService resultService,
+                                  AppDbContext context) : IParticipationService
 {
     public async Task<ContestParticipation> GetContestParticipationAsync(int userId, string contestName)
     {
-        if (!await registrationService.IsUserRegisteredAsync(contestName, userId))
+        var app = await context.Applications
+                               .AsSplitQuery()
+                               .AsNoTracking()
+                               .Include(application => application.User)
+                               .Include(application => application.Contest)
+                               .ThenInclude(contest => contest.PreliminaryStage)
+                               .Include(application => application.Contest)
+                               .ThenInclude(contest => contest.FinalStage)
+                               .FirstOrDefaultAsync(application => application.Contest.Name == contestName
+                                                                && application.UserId == userId);
+
+        if (app is null)
             return new(false, null, null);
 
-        var user = await userService.GetRequiredUserAsync(userId);
-        var contest = await contestService.GetRequiredContestAsync(contestName);
+        var preliminaryParticipation = await GetContestStageParticipationAsync(app.Id, app.Contest.PreliminaryStage);
 
-        // var preliminaryParticipation = await GetContestStageParticipationAsync(user., contest.PreliminaryStage);
-
-        return new(true, null, null);
+        return new(true, preliminaryParticipation, null);
     }
 
-    private async Task<ContestStageParticipation?> GetContestStageParticipationAsync(int participantId, ContestStage? contestStage)
+    private async Task<ContestStageParticipation?> GetContestStageParticipationAsync(int participantId, DataAccess.Entities.ContestStage? contestStage)
     {
         if (contestStage is null)
             return null;

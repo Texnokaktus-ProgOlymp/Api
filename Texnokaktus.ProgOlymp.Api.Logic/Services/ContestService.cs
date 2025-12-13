@@ -48,6 +48,7 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
 
         await context.SaveChangesAsync();
         memoryCache.Remove(GetKey(name));
+        memoryCache.Remove(GetExistenceKey(name));
 
         return contest.Id;
     }
@@ -64,7 +65,16 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
                                                        .FirstOrDefaultAsync(contest => contest.Name == contestName);
                                      });
 
+    public Task<bool> IsContestExistAsync(string contestName) =>
+        memoryCache.GetOrCreateAsync(GetExistenceKey(contestName),
+                                     entry =>
+                                     {
+                                         entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+                                         return context.Contests.AnyAsync(contest => contest.Name == contestName);
+                                     });
+
     private static string GetKey(string contestName) => $"Contests:{contestName}";
+    private static string GetExistenceKey(string contestName) => $"Contests:{contestName}:Exists";
 }
 
 file static class MappingExtensions
