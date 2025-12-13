@@ -61,8 +61,9 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
                                          return context.Contests
                                                        .Include(contest => contest.PreliminaryStage)
                                                        .Include(contest => contest.FinalStage)
+                                                       .Where(contest => contest.Name == contestName)
                                                        .Select(contest => contest.MapContest())
-                                                       .FirstOrDefaultAsync(contest => contest.Name == contestName);
+                                                       .FirstOrDefaultAsync();
                                      });
 
     public Task<bool> IsContestExistAsync(string contestName) =>
