@@ -14,6 +14,7 @@ using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
 using Texnokaktus.ProgOlymp.Api.Services.Grpc;
 using Texnokaktus.ProgOlymp.Api.Settings;
+using Texnokaktus.ProgOlymp.Api.Validators;
 using Texnokaktus.ProgOlymp.OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +23,8 @@ builder.Services
        .AddDataAccess(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultDb"))
                                                       .EnableSensitiveDataLogging(builder.Environment.IsDevelopment()))
        .AddLogicServices()
-       .AddPresentationServices();
+       .AddPresentationServices()
+       .AddValidators();
 
 builder.Services.AddOptions<JwtSettings>().BindConfiguration(nameof(JwtSettings));
 
@@ -37,7 +39,6 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddGrpcClients(builder.Configuration);
 
 builder.Services.AddOpenApi(options => options.AddSchemaTransformer<SchemaTransformer>());
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
