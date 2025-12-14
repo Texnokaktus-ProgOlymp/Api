@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
 using Texnokaktus.ProgOlymp.Api.Extensions;
-using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
 using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Validators;
@@ -35,14 +33,6 @@ internal static class EndpointsMapper
     {
         builder.MapGet("regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
 
-        /*
-         * TODO Remove
-         */
-
-        // builder.MapGet("results",
-        //                (string login, int contestId, Logic.Services.Abstractions.IParticipationService s) =>
-        //                    s.GetContestParticipationAsync(login, contestId));
-
         return builder;
     }
 
@@ -61,22 +51,4 @@ internal static class EndpointsMapper
 
         return builder;
     }
-
-    /*
-    public static IEndpointRouteBuilder MapAuthorizationEndpoints(this IEndpointRouteBuilder builder)
-    {
-        var group = builder.MapGroup("authorize");
-
-        group.MapGet("url",
-                     async (string? redirectUrl,
-                            [FromServices] IYandexIdUserServiceClient c) => TypedResults.Ok(await c.GetOAuthUrlAsync(redirectUrl)));
-
-        group.MapGet("redirect",
-                     async (string? redirectUrl,
-                            [FromServices] IYandexIdUserServiceClient c) =>
-                         TypedResults.Redirect(await c.GetOAuthUrlAsync(redirectUrl)));
-
-        return builder;
-    }
-    */
 }
