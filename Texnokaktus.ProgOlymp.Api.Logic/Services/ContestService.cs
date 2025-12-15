@@ -29,7 +29,7 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
             var description = await contestDataServiceClient.GetContestAsync(preliminaryStageId.Value);
             contest.PreliminaryStage = new()
             {
-                Id = preliminaryStageId.Value,
+                ContestId = preliminaryStageId.Value,
                 Name = description.Name,
                 ContestStart = description.StartTime.ToDateTimeOffset(),
                 Duration = description.Duration.ToTimeSpan()
@@ -41,7 +41,7 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
             var description = await contestDataServiceClient.GetContestAsync(finalStageId.Value);
             contest.FinalStage = new()
             {
-                Id = finalStageId.Value,
+                ContestId = finalStageId.Value,
                 Name = description.Name,
                 ContestStart = description.StartTime.ToDateTimeOffset(),
                 Duration = description.Duration.ToTimeSpan()
@@ -91,7 +91,7 @@ file static class MappingExtensions
             contest.FinalStage?.MapContestStage());
 
     private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
-        new(contestStage.Id,
+        new(contestStage.ContestId,
             contestStage.Name,
             contestStage.ContestStart,
             contestStage.ContestFinish,

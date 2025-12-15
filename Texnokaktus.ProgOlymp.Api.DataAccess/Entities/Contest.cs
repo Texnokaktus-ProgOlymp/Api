@@ -6,9 +6,6 @@ public class Contest
     public required string Name { get; init; }
     public required string Title { get; set; }
 
-    public long? PreliminaryStageId { get; set; }
-    public long? FinalStageId { get; set; }
-
     public DateTimeOffset RegistrationStart { get; set; }
     public DateTimeOffset RegistrationFinish { get; set; }
 

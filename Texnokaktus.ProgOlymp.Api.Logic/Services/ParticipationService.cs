@@ -36,18 +36,18 @@ public class ParticipationService(IParticipantServiceClient participantServiceCl
         if (contestStage is null)
             return null;
 
-        var participantStatus = await participantServiceClient.GetParticipantStatusAsync(contestStage.Id, participantId);
+        var participantStatus = await participantServiceClient.GetParticipantStatusAsync(contestStage.ContestId, participantId);
 
         var state = participantStatus.State.MapParticipationState();
 
         if (state is ParticipationState.InProgress or ParticipationState.Finished)
-            return new(contestStage.Id,
+            return new(contestStage.ContestId,
                        contestStage.ContestStart,
                        contestStage.ContestFinish,
                        state,
-                       await resultService.GetContestResultsAsync(contestStage.Id, participantId));
+                       await resultService.GetContestResultsAsync(contestStage.ContestId, participantId));
 
-        return new(contestStage.Id, contestStage.ContestStart, contestStage.ContestFinish, state, null);
+        return new(contestStage.ContestId, contestStage.ContestStart, contestStage.ContestFinish, state, null);
     }
 }
 

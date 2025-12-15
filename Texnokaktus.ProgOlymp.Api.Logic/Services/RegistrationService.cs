@@ -88,7 +88,13 @@ public class RegistrationService(IContestService contestService,
 
         await context.SaveChangesAsync();
 
-        await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N"));
+        entity.PreliminaryStageParticipation = new()
+        {
+            ContestUserId = await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N")),
+            State = DataAccess.Entities.ParticipationState.NotStarted
+        };
+
+        await context.SaveChangesAsync();
 
         await transaction.CommitAsync();
 
@@ -113,10 +119,11 @@ public class RegistrationService(IContestService contestService,
         return new(contest, applications);
     }
 
-    private async Task RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
+    private async Task<long> RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
     {
-        await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
+        var contestUserId = await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
+        return contestUserId;
     }
 
     [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
