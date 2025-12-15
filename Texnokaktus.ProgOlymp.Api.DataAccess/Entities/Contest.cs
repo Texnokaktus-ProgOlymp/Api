@@ -11,4 +11,6 @@ public class Contest
 
     public ContestStage? PreliminaryStage { get; set; }
     public ContestStage? FinalStage { get; set; }
+
+    public ICollection<Application> Applications { get; set; }
 }

@@ -4,6 +4,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
 using Texnokaktus.ProgOlymp.Api.Converters;
@@ -12,6 +14,7 @@ using Texnokaktus.ProgOlymp.Api.Endpoints;
 using Texnokaktus.ProgOlymp.Api.Extensions;
 using Texnokaktus.ProgOlymp.Api.Infrastructure;
 using Texnokaktus.ProgOlymp.Api.Logic;
+using Texnokaktus.ProgOlymp.Api.Logic.Jobs;
 using Texnokaktus.ProgOlymp.Api.Services.Grpc;
 using Texnokaktus.ProgOlymp.Api.Settings;
 using Texnokaktus.ProgOlymp.Api.Validators;
@@ -25,6 +28,10 @@ builder.Services
        .AddLogicServices()
        .AddPresentationServices()
        .AddValidators();
+
+builder.Services
+       .AddQuartz(configurator => configurator.AddParticipationUpdateJob(triggerConfiguratorAction: triggerConfigurator => triggerConfigurator.WithSimpleSchedule(scheduleBuilder => scheduleBuilder.WithIntervalInMinutes(10).RepeatForever()).StartNow()))
+       .AddQuartzServer();
 
 builder.Services.AddOptions<JwtSettings>().BindConfiguration(nameof(JwtSettings));
 

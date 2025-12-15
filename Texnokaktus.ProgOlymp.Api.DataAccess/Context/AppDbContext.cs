@@ -9,7 +9,6 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 public class AppDbContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider) : DbContext(options)
 {
     public DbSet<Contest> Contests { get; set; }
-    public DbSet<ContestStage> ContestStages { get; set; }
     public DbSet<Region> Regions { get; set; }
     public DbSet<Application> Applications { get; set; }
     public DbSet<User> Users { get; set; }
@@ -61,7 +60,7 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
                    .HasForeignKey(application => application.UserId);
 
             builder.HasOne(application => application.Contest)
-                   .WithMany()
+                   .WithMany(contest => contest.Applications)
                    .HasForeignKey(application => application.ContestId);
 
             builder.HasOne(application => application.Region)
