@@ -12,6 +12,5 @@
   <ItemGroup>
     <PackageReference Include="Quartz" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" />
-    <PackageReference Include="Scrutor" />
   </ItemGroup>
 </Project>
