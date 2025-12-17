@@ -16,7 +16,11 @@ internal class RegionService(AppDbContext context, IMemoryCache memoryCache) : I
                                                return context.Regions
                                                              .OrderByDescending(region => region.Order)
                                                              .ThenBy(region => region.Id)
-                                                             .Select(region => new Region(region.Id, region.Name))
+                                                             .Select(region => new Region
+                                                              {
+                                                                  Id = region.Id,
+                                                                  Name = region.Name
+                                                              })
                                                              .ToArrayAsync();
                                            })
      ?? [];

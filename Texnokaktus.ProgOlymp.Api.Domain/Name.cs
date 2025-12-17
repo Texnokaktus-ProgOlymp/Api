@@ -1,3 +1,8 @@
 namespace Texnokaktus.ProgOlymp.Api.Domain;
 
-public record Name(string FirstName, string LastName, string? Patronym);
+public record Name
+{
+    public required string FirstName { get; init; }
+    public required string LastName { get; init; }
+    public required string? Patronym { get; init; }
+}

@@ -8,32 +8,36 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class ParticipationService(AppDbContext context) : IParticipationService
 {
-    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, string contestName)
-    {
-        var app = await context.Applications
-                               .AsSplitQuery()
-                               .AsNoTracking()
-                               .Include(application => application.User)
-                               .Include(application => application.Contest)
-                               .FirstOrDefaultAsync(application => application.Contest.Name == contestName
-                                                                && application.UserId == userId);
-
-        if (app is null)
-            return new(false, null, null);
-
-        return new(true,
-                   app.PreliminaryStageParticipation?.MapContestStageParticipation(app.Contest.PreliminaryStage?.ContestId),
-                   app.FinalStageParticipation?.MapContestStageParticipation(null));
-    }
+    public async Task<ContestParticipation> GetContestParticipationAsync(int userId, string contestName) =>
+        await context.Applications
+                     .AsSplitQuery()
+                     .AsNoTracking()
+                     .Include(application => application.User)
+                     .Include(application => application.Contest)
+                     .FirstOrDefaultAsync(application => application.Contest.Name == contestName
+                                                      && application.UserId == userId) is { } app
+            ? new()
+            {
+                IsUserRegistered = true,
+                PreliminaryStageParticipation = app.PreliminaryStageParticipation?.MapContestStageParticipation(app.Contest.PreliminaryStage?.ContestId),
+                FinalStageParticipation = app.FinalStageParticipation?.MapContestStageParticipation(null)
+            }
+            : new()
+            {
+                IsUserRegistered = false
+            };
 }
 
 file static class MappingExtensions
 {
     public static ContestStageParticipation MapContestStageParticipation(this DataAccess.Entities.Participation participation, long? contestId) =>
-        new(contestId,
-            participation.Start,
-            participation.Finish,
-            participation.State.MapParticipationState());
+        new()
+        {
+            ContestId = contestId,
+            Start = participation.Start,
+            Finish = participation.Finish,
+            State = participation.State.MapParticipationState()
+        };
 
     private static ParticipationState MapParticipationState(this DataAccess.Entities.ParticipationState state) =>
         state switch

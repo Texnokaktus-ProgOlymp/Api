@@ -23,12 +23,15 @@ public class RegistrationService(IContestService contestService,
     {
         if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
 
-        return new(contest.Id,
-                   contest.Name,
-                   contest.RegistrationStart,
-                   contest.RegistrationFinish,
-                   GetState(contest, timeProvider.GetUtcNow()));
-    }
+        return new()
+        {
+            ContestId = contest.Id,
+            ContestName = contest.Name,
+            RegistrationStart = contest.RegistrationStart,
+            RegistrationFinish = contest.RegistrationFinish,
+            State = GetState(contest, timeProvider.GetUtcNow())
+        };
+}
 
     public Task<bool> IsUserRegisteredAsync(string contestName, int userId) =>
         context.Applications.AnyAsync(application => application.Contest.Name == contestName
@@ -105,19 +108,19 @@ public class RegistrationService(IContestService contestService,
         return entity.Id;
     }
 
-    public async Task<ContestApplications?> GetContestApplicationsAsync(string contestName)
-    {
-        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
-
-        var applications = await context.Applications
-                                        .Include(application => application.User)
-                                        .Include(application => application.Region)
-                                        .Where(application => application.Contest.Name == contestName)
-                                        .Select(application => application.MapDomainApplication())
-                                        .ToArrayAsync();
-
-        return new(contest, applications);
-    }
+    public async Task<ContestApplications?> GetContestApplicationsAsync(string contestName) =>
+        await contestService.GetContestAsync(contestName) is { } contest
+            ? new()
+            {
+                Contest = contest,
+                Applications = await context.Applications
+                                            .Include(application => application.User)
+                                            .Include(application => application.Region)
+                                            .Where(application => application.Contest.Name == contestName)
+                                            .Select(application => application.MapDomainApplication())
+                                            .ToArrayAsync()
+            }
+            : null;
 
     private async Task<long> RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
     {
@@ -141,45 +144,69 @@ public class RegistrationService(IContestService contestService,
 file static class MappingExtensions
 {
     public static Application MapDomainApplication(this DataAccess.Entities.Application application) =>
-        new(application.Id,
-            application.Uid,
-            application.User.MapUser(),
-            application.Created,
-            application.MapParticipantData(),
-            application.Parent.MapParentData(),
-            application.Teacher.MapTeacherData(),
-            application.PersonalDataConsent);
+        new()
+        {
+            Id = application.Id,
+            Uid = application.Uid,
+            User = application.User.MapUser(),
+            Created = application.Created,
+            ParticipantData = application.MapParticipantData(),
+            ParentData = application.Parent.MapParentData(),
+            TeacherData = application.Teacher.MapTeacherData(),
+            PersonalDataConsent = application.PersonalDataConsent
+        };
 
     private static ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
-        new(new(application.FirstName,
-                application.LastName,
-                application.Patronym),
-            application.BirthDate,
-            application.Snils,
-            true, // TODO Add validation
-            application.Email,
-            application.SchoolName,
-            application.Region.Name,
-            application.Grade);
+        new()
+        {
+            Name = new()
+            {
+                FirstName = application.FirstName,
+                LastName = application.LastName,
+                Patronym = application.Patronym
+            },
+            BirthDate = application.BirthDate,
+            Snils = application.Snils,
+            IsSnilsValid = true, // TODO Add validation
+            Email = application.Email,
+            School = application.SchoolName,
+            Region = application.Region.Name,
+            Grade = application.Grade
+        };
 
     private static ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
-        new(new(parent.FirstName,
-                parent.LastName,
-                parent.Patronym),
-            parent.Email,
-            parent.Phone);
+        new()
+        {
+            Name = new()
+            {
+                FirstName = parent.FirstName,
+                LastName = parent.LastName,
+                Patronym = parent.Patronym
+            },
+            Email = parent.Email,
+            Phone = parent.Phone
+        };
 
     private static TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
-        new(new(teacher.FirstName,
-                teacher.LastName,
-                teacher.Patronym),
-            teacher.Email,
-            teacher.Phone,
-            teacher.School);
+        new()
+        {
+            Name = new()
+            {
+                FirstName = teacher.FirstName,
+                LastName = teacher.LastName,
+                Patronym = teacher.Patronym
+            },
+            Email = teacher.Email,
+            Phone = teacher.Phone,
+            School = teacher.School
+        };
 
     private static User MapUser(this DataAccess.Entities.User user) =>
-        new(user.Id,
-            user.Login,
-            user.DisplayName,
-            user.DefaultAvatar);
+        new()
+        {
+            Id = user.Id,
+            Login = user.Login,
+            DisplayName = user.DisplayName,
+            DefaultAvatar = user.DefaultAvatar
+        };
 }

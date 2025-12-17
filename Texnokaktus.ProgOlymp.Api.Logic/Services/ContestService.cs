@@ -83,17 +83,23 @@ internal class ContestService(AppDbContext context, IContestDataServiceClient co
 file static class MappingExtensions
 {
     public static Domain.Contest MapContest(this Contest contest) =>
-        new(contest.Id,
-            contest.Name,
-            contest.RegistrationStart,
-            contest.RegistrationFinish,
-            contest.PreliminaryStage?.MapContestStage(),
-            contest.FinalStage?.MapContestStage());
+        new()
+        {
+            Id = contest.Id,
+            Name = contest.Name,
+            RegistrationStart = contest.RegistrationStart,
+            RegistrationFinish = contest.RegistrationFinish,
+            PreliminaryStage = contest.PreliminaryStage?.MapContestStage(),
+            FinalStage = contest.FinalStage?.MapContestStage()
+        };
 
     private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
-        new(contestStage.ContestId,
-            contestStage.Name,
-            contestStage.ContestStart,
-            contestStage.ContestFinish,
-            contestStage.Duration);
+        new()
+        {
+            Id = contestStage.ContestId,
+            Name = contestStage.Name,
+            ContestStart = contestStage.ContestStart,
+            ContestFinish = contestStage.ContestFinish,
+            Duration = contestStage.Duration
+        };
 }

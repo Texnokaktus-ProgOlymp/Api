@@ -1,5 +1,8 @@
 namespace Texnokaktus.ProgOlymp.Api.Domain;
 
-public record ContestParticipation(bool IsUserRegistered,
-                                   ContestStageParticipation? PreliminaryStageParticipation,
-                                   ContestStageParticipation? FinalStageParticipation);
+public record ContestParticipation
+{
+    public required bool IsUserRegistered { get; init; }
+    public ContestStageParticipation? PreliminaryStageParticipation { get; init; }
+    public ContestStageParticipation? FinalStageParticipation { get; init; }
+}

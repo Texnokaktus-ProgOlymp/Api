@@ -46,8 +46,11 @@ public class UserService(AppDbContext context, IYandexIdUserServiceClient yandex
 file static class MappingExtensions
 {
     public static User MapUser(this DataAccess.Entities.User user) =>
-        new(user.Id,
-            user.Login,
-            user.DisplayName,
-            user.DefaultAvatar);
+        new()
+        {
+            Id = user.Id,
+            Login = user.Login,
+            DisplayName = user.DisplayName,
+            DefaultAvatar = user.DefaultAvatar
+        };
 }
