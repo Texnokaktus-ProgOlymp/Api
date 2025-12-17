@@ -1,4 +1,6 @@
-namespace Texnokaktus.ProgOlymp.Api.Domain;
+using Texnokaktus.ProgOlymp.Api.Domain;
+
+namespace Texnokaktus.ProgOlymp.Api.Models;
 
 public record ContestStageParticipation
 {

@@ -11,13 +11,6 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 public class UserService(AppDbContext context, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
 {
     private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
-
-    public async Task<User?> GetByIdAsync(int id) =>
-        await context.Users
-                     .Where(user => user.Id == id)
-                     .Select(user => user.MapUser())
-                     .FirstOrDefaultAsync();
-
     public async Task<User> AuthenticateUserAsync(string code)
     {
         var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Texnokaktus.ProgOlymp.Api.Domain;
+using Texnokaktus.ProgOlymp.Api.Models;
 
 namespace Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 

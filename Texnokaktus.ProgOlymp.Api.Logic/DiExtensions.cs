@@ -12,6 +12,5 @@ public static class DiExtensions
                 .AddScoped<IRegistrationService, RegistrationService>()
                 .AddScoped<IContestService, ContestService>()
                 .AddScoped<IRegionService, RegionService>()
-                .AddScoped<IUserService, UserService>()
-                .AddScoped<IParticipationService, ParticipationService>();
+                .AddScoped<IUserService, UserService>();
 }
