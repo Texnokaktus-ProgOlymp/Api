@@ -4,7 +4,6 @@ using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexContest;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexId;
-using ParticipantService = Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexContest.ParticipantService;
 
 namespace Texnokaktus.ProgOlymp.Api.Infrastructure;
 

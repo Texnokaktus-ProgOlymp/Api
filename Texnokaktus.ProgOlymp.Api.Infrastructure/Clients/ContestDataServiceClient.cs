@@ -16,14 +16,14 @@ internal class ContestDataServiceClient(ContestDataService.ContestDataServiceCli
         return response.ContestUrl;
     }
 
-    public async Task<ContestDescription> GetContestAsync(long contestId)
+    public async Task<ContestDescription> GetContestAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetContestRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetContestAsync(request);
+        var response = await client.GetContestAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 
