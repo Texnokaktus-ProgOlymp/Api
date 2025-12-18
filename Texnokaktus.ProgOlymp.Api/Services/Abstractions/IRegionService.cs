@@ -1,6 +1,6 @@
-using Texnokaktus.ProgOlymp.Api.Domain;
+using Texnokaktus.ProgOlymp.Api.Models;
 
-namespace Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
+namespace Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
 public interface IRegionService
 {

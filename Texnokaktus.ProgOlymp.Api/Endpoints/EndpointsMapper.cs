@@ -31,7 +31,7 @@ internal static class EndpointsMapper
 
     public static IEndpointRouteBuilder MapRegionEndpoints(this IEndpointRouteBuilder builder)
     {
-        builder.MapGet("regions", (Logic.Services.Abstractions.IRegionService s) => s.GetAllRegionsAsync());
+        builder.MapGet("regions", (IRegionService s) => s.GetAllRegionsAsync());
 
         return builder;
     }

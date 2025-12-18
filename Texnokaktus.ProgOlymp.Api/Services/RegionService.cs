@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
-using Texnokaktus.ProgOlymp.Api.Domain;
-using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
+using Texnokaktus.ProgOlymp.Api.Models;
+using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
-namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
+namespace Texnokaktus.ProgOlymp.Api.Services;
 
 internal class RegionService(AppDbContext context, IMemoryCache memoryCache) : IRegionService
 {

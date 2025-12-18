@@ -11,6 +11,5 @@ public static class DiExtensions
         services.AddHostedService<MetricsInitService>()
                 .AddScoped<IRegistrationService, RegistrationService>()
                 .AddScoped<IContestService, ContestService>()
-                .AddScoped<IRegionService, RegionService>()
                 .AddScoped<IUserService, UserService>();
 }
