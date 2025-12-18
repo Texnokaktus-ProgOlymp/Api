@@ -7,5 +7,5 @@ public interface IParticipantServiceClient
     Task<ParticipantStatus> GetContestOwnerParticipationAsync(long contestStageId, CancellationToken cancellationToken);
     Task<IEnumerable<ParticipantInfo>> GetContestParticipantsAsync(long contestStageId, CancellationToken cancellationToken);
     Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, int participantId, CancellationToken cancellationToken);
-    Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId);
+    Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId, CancellationToken cancellationToken);
 }

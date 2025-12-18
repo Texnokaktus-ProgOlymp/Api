@@ -5,14 +5,14 @@ namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 
 internal class ContestDataServiceClient(ContestDataService.ContestDataServiceClient client) : IContestDataServiceClient
 {
-    public async Task<string?> GetContestUrlAsync(long contestId)
+    public async Task<string?> GetContestUrlAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetContestUrlRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetContestUrlAsync(request);
+        var response = await client.GetContestUrlAsync(request, cancellationToken: cancellationToken);
         return response.ContestUrl;
     }
 
@@ -27,18 +27,18 @@ internal class ContestDataServiceClient(ContestDataService.ContestDataServiceCli
         return response.Result;
     }
 
-    public async Task<IEnumerable<ContestProblem>> GetContestProblemsAsync(long contestId)
+    public async Task<IEnumerable<ContestProblem>> GetContestProblemsAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetProblemsRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetProblemsAsync(request);
+        var response = await client.GetProblemsAsync(request, cancellationToken: cancellationToken);
         return response.Problems;
     }
 
-    public async Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch)
+    public async Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch, CancellationToken cancellationToken)
     {
         var request = new GetStandingsRequest
         {
@@ -48,7 +48,7 @@ internal class ContestDataServiceClient(ContestDataService.ContestDataServiceCli
             ParticipantSearch = participantSearch
         };
 
-        var response = await client.GetStandingsAsync(request);
+        var response = await client.GetStandingsAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 }

@@ -39,7 +39,7 @@ public class ParticipantServiceClient(ParticipantService.ParticipantServiceClien
         return response.Result;
     }
 
-    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId)
+    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId, CancellationToken cancellationToken)
     {
         var request = new ParticipantStatsRequest
         {
@@ -47,7 +47,7 @@ public class ParticipantServiceClient(ParticipantService.ParticipantServiceClien
             ParticipantId = participantId
         };
 
-        var response = await client.GetParticipantStatsAsync(request);
+        var response = await client.GetParticipantStatsAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 }

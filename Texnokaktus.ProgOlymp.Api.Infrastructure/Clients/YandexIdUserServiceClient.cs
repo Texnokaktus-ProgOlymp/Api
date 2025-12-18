@@ -5,23 +5,23 @@ namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 
 public class YandexIdUserServiceClient(UserService.UserServiceClient client) : IYandexIdUserServiceClient
 {
-    public async Task<string> GetOAuthUrlAsync(string? urlRequest)
+    public async Task<string> GetOAuthUrlAsync(string? urlRequest, CancellationToken cancellationToken)
     {
         var request = new GetOAuthUrlRequest
         {
             RedirectUrl = urlRequest
         };
-        var response = await client.GetOAuthUrlAsync(request);
+        var response = await client.GetOAuthUrlAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 
-    public async Task<User> AuthenticateUserAsync(string code)
+    public async Task<User> AuthenticateUserAsync(string code, CancellationToken cancellationToken)
     {
         var request = new AuthenticateUserRequest
         {
             Code = code
         };
-        var response = await client.AuthenticateUserAsync(request);
+        var response = await client.AuthenticateUserAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 }

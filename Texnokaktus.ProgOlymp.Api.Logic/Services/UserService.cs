@@ -13,7 +13,7 @@ public class UserService(AppDbContext context, IYandexIdUserServiceClient yandex
     private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
     public async Task<User> AuthenticateUserAsync(string code)
     {
-        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
+        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code, CancellationToken.None);
 
         var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Login == user.Login)
                   ?? context.Users
