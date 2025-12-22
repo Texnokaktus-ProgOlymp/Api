@@ -8,4 +8,5 @@ public record Contest
     public required DateTimeOffset RegistrationFinish { get; init; }
     public ContestStage? PreliminaryStage { get; init; }
     public ContestStage? FinalStage { get; init; }
+    public RegistrationState RegistrationState { get; set; }
 }

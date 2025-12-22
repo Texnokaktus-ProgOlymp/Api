@@ -19,20 +19,6 @@ public class RegistrationService(IContestService contestService,
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
     private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
 
-    public async Task<ContestRegistrationState?> GetRegistrationStateAsync(string contestName)
-    {
-        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
-
-        return new()
-        {
-            ContestId = contest.Id,
-            ContestName = contest.Name,
-            RegistrationStart = contest.RegistrationStart,
-            RegistrationFinish = contest.RegistrationFinish,
-            State = GetState(contest, timeProvider.GetUtcNow())
-        };
-}
-
     public Task<bool> IsUserRegisteredAsync(string contestName, int userId) =>
         context.Applications.AnyAsync(application => application.Contest.Name == contestName
                                                   && application.UserId == userId);
@@ -42,11 +28,18 @@ public class RegistrationService(IContestService contestService,
         var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
                    ?? throw new ContestNotFoundException(userInsertModel.ContestName);
 
+        if (contest.RegistrationState != RegistrationState.InProgress)
+            throw new RegistrationClosedException(contest.Name);
+
         var userLogin = await context.Users
                                      .Where(user => user.Id == userInsertModel.UserId)
                                      .Select(user => user.Login)
                                      .FirstOrDefaultAsync()
                      ?? throw new UserNotFoundException(userInsertModel.UserId);
+
+        if (await context.Applications.AnyAsync(application => application.UserId == userInsertModel.UserId
+                                                            && application.ContestId == contest.Id))
+            throw new AlreadyRegisteredException(contest.Name, userInsertModel.UserId);
 
         var uid = Guid.NewGuid();
 
@@ -127,17 +120,6 @@ public class RegistrationService(IContestService contestService,
         var contestUserId = await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
         return contestUserId;
-    }
-
-    [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
-    private static RegistrationState GetState(Contest contest, DateTimeOffset now)
-    {
-        if (contest.PreliminaryStage is null)
-            return RegistrationState.Unavailable;
-
-        if (now < contest.RegistrationStart) return RegistrationState.NotStarted;
-        if (now >= contest.RegistrationFinish) return RegistrationState.Finished;
-        return RegistrationState.InProgress;
     }
 }
 

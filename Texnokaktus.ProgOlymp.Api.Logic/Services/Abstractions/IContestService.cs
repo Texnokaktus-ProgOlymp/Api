@@ -12,6 +12,4 @@ public interface IContestService
                               long? finalStageId);
 
     Task<Contest?> GetContestAsync(string contestName);
-
-    Task<bool> IsContestExistAsync(string contestName);
 }

@@ -1,5 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
@@ -10,7 +10,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 internal class ContestService(AppDbContext context,
                               IContestDataServiceClient contestDataServiceClient,
                               IParticipantServiceClient participantServiceClient,
-                              IMemoryCache memoryCache) : IContestService
+                              TimeProvider timeProvider) : IContestService
 {
     public async Task<int> AddContestAsync(string name,
                                            string title,
@@ -36,8 +36,6 @@ internal class ContestService(AppDbContext context,
         context.Contests.Add(contest);
 
         await context.SaveChangesAsync();
-        memoryCache.Remove(GetKey(name));
-        memoryCache.Remove(GetExistenceKey(name));
 
         return contest.Id;
     }
@@ -63,33 +61,28 @@ internal class ContestService(AppDbContext context,
     }
 
     public Task<Domain.Contest?> GetContestAsync(string contestName) =>
-        memoryCache.GetOrCreateAsync(GetKey(contestName),
-                                     entry =>
-                                     {
-                                         entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
-                                         return context.Contests
-                                                       .Include(contest => contest.PreliminaryStage)
-                                                       .Include(contest => contest.FinalStage)
-                                                       .Where(contest => contest.Name == contestName)
-                                                       .Select(contest => contest.MapContest())
-                                                       .FirstOrDefaultAsync();
-                                     });
-
-    public Task<bool> IsContestExistAsync(string contestName) =>
-        memoryCache.GetOrCreateAsync(GetExistenceKey(contestName),
-                                     entry =>
-                                     {
-                                         entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
-                                         return context.Contests.AnyAsync(contest => contest.Name == contestName);
-                                     });
-
-    private static string GetKey(string contestName) => $"Contests:{contestName}";
-    private static string GetExistenceKey(string contestName) => $"Contests:{contestName}:Exists";
+        context.Contests
+               .Include(contest => contest.PreliminaryStage)
+               .Include(contest => contest.FinalStage)
+               .Where(contest => contest.Name == contestName)
+               .Select(contest => contest.MapContest(timeProvider.GetUtcNow()))
+               .FirstOrDefaultAsync();
 }
 
 file static class MappingExtensions
 {
-    public static Domain.Contest MapContest(this Contest contest) =>
+    [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
+    private static Domain.RegistrationState GetState(Contest contest, DateTimeOffset now)
+    {
+        if (contest.PreliminaryStage is null)
+            return Domain.RegistrationState.Unavailable;
+
+        if (now < contest.RegistrationStart) return Domain.RegistrationState.NotStarted;
+        if (now >= contest.RegistrationFinish) return Domain.RegistrationState.Finished;
+        return Domain.RegistrationState.InProgress;
+    }
+
+    public static Domain.Contest MapContest(this Contest contest, DateTimeOffset now) =>
         new()
         {
             Id = contest.Id,
@@ -97,7 +90,8 @@ file static class MappingExtensions
             RegistrationStart = contest.RegistrationStart,
             RegistrationFinish = contest.RegistrationFinish,
             PreliminaryStage = contest.PreliminaryStage?.MapContestStage(),
-            FinalStage = contest.FinalStage?.MapContestStage()
+            FinalStage = contest.FinalStage?.MapContestStage(),
+            RegistrationState = GetState(contest, now)
         };
 
     private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
