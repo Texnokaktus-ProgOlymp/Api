@@ -9,6 +9,9 @@ public class Contest
     public DateTimeOffset RegistrationStart { get; set; }
     public DateTimeOffset RegistrationFinish { get; set; }
 
+    public int? PreliminaryStageId { get; set; }
+    public int? FinalStageId { get; set; }
+
     public ContestStage? PreliminaryStage { get; set; }
     public ContestStage? FinalStage { get; set; }
 

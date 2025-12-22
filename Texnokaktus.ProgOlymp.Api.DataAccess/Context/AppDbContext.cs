@@ -24,8 +24,27 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
                    .IsUnicode()
                    .HasMaxLength(100);
 
-            builder.OwnsOne<ContestStage>(contest => contest.PreliminaryStage).ConfigureContestStage();
-            builder.OwnsOne<ContestStage>(contest => contest.FinalStage).ConfigureContestStage();
+            builder.HasOne<ContestStage>(contest => contest.PreliminaryStage)
+                   .WithOne()
+                   .HasForeignKey<Contest>(contest => contest.PreliminaryStageId);
+
+            builder.HasOne<ContestStage>(contest => contest.FinalStage)
+                   .WithOne()
+                   .HasForeignKey<Contest>(contest => contest.FinalStageId);
+        });
+
+        modelBuilder.Entity<ContestStage>(builder =>
+        {
+            builder.Property(stage => stage.Name)
+                   .IsUnicode()
+                   .HasMaxLength(100);
+
+            builder.Property(stage => stage.Duration)
+                   .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
+
+            builder.HasMany(contestResult => contestResult.Problems)
+                   .WithOne()
+                   .HasForeignKey(problem => problem.ContestResultId);
         });
 
         modelBuilder.Entity<Region>(builder =>
@@ -85,6 +104,39 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.Property(user => user.DefaultAvatar).IsUnicode(false) /*.HasMaxLength(96)*/;
         });
 
+        modelBuilder.Entity<Problem>(builder =>
+        {
+            builder.HasKey(problem => problem.Id);
+
+            builder.HasAlternateKey(problem => new { problem.ContestResultId, problem.Alias });
+
+            builder.HasMany(problem => problem.Results)
+                   .WithOne()
+                   .HasForeignKey(problemResult => problemResult.ProblemId);
+        });
+
+        modelBuilder.Entity<ProblemResult>(builder =>
+        {
+            builder.HasKey(problemResult => problemResult.Id);
+
+            builder.HasAlternateKey(problemResult => new { problemResult.ProblemId, problemResult.ApplicationId });
+
+            builder.Property(problemResult => problemResult.BaseScore).HasScorePrecision();
+
+            builder.HasOne(problemResult => problemResult.Application)
+                   .WithMany()
+                   .HasForeignKey(problemResult => problemResult.ApplicationId);
+
+            builder.OwnsMany<ScoreAdjustment>(problemResult => problemResult.Adjustments,
+                                              navigationBuilder =>
+                                              {
+                                                  navigationBuilder.HasKey(adjustment => adjustment.Id);
+
+                                                  navigationBuilder.Property(adjustment => adjustment.Adjustment)
+                                                                   .HasScorePrecision();
+                                              });
+        });
+
         base.OnModelCreating(modelBuilder);
     }
 }
@@ -95,15 +147,6 @@ file static class EfExtensions
                                                        IDataProtector dataProtector) =>
         propertyBuilder.HasConversion(new EncryptionConverter(dataProtector));
 
-    public static OwnedNavigationBuilder<TOwner, ContestStage> ConfigureContestStage<TOwner>(this OwnedNavigationBuilder<TOwner, ContestStage> navigationBuilder) where TOwner : class
-    {
-        navigationBuilder.Property(stage => stage.Name)
-                         .IsUnicode()
-                         .HasMaxLength(100);
-
-        navigationBuilder.Property(stage => stage.Duration)
-                         .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
-
-        return navigationBuilder;
-    }
+    public static PropertyBuilder<decimal> HasScorePrecision(this PropertyBuilder<decimal> propertyBuilder) =>
+        propertyBuilder.HasPrecision(5, 2);
 }
