@@ -5,40 +5,40 @@ namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 
 internal class ContestDataServiceClient(ContestDataService.ContestDataServiceClient client) : IContestDataServiceClient
 {
-    public async Task<string?> GetContestUrlAsync(long contestId)
+    public async Task<string?> GetContestUrlAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetContestUrlRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetContestUrlAsync(request);
+        var response = await client.GetContestUrlAsync(request, cancellationToken: cancellationToken);
         return response.ContestUrl;
     }
 
-    public async Task<ContestDescription> GetContestAsync(long contestId)
+    public async Task<ContestDescription> GetContestAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetContestRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetContestAsync(request);
+        var response = await client.GetContestAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 
-    public async Task<IEnumerable<ContestProblem>> GetContestProblemsAsync(long contestId)
+    public async Task<IEnumerable<ContestProblem>> GetContestProblemsAsync(long contestId, CancellationToken cancellationToken)
     {
         var request = new GetProblemsRequest
         {
             ContestId = contestId
         };
 
-        var response = await client.GetProblemsAsync(request);
+        var response = await client.GetProblemsAsync(request, cancellationToken: cancellationToken);
         return response.Problems;
     }
 
-    public async Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch)
+    public async Task<ContestStandings> GetStandingsAsync(long contestStageId, int pageIndex, int pageSize, string? participantSearch, CancellationToken cancellationToken)
     {
         var request = new GetStandingsRequest
         {
@@ -48,31 +48,7 @@ internal class ContestDataServiceClient(ContestDataService.ContestDataServiceCli
             ParticipantSearch = participantSearch
         };
 
-        var response = await client.GetStandingsAsync(request);
-        return response.Result;
-    }
-
-    public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, string participantLogin)
-    {
-        var request = new ParticipantStatusRequest
-        {
-            ContestId = contestStageId,
-            ParticipantLogin = participantLogin
-        };
-
-        var response = await client.GetParticipantStatusAsync(request);
-        return response.Result;
-    }
-
-    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, string participantLogin)
-    {
-        var request = new ParticipantStatsRequest
-        {
-            ContestId = contestStageId,
-            ParticipantLogin = participantLogin
-        };
-
-        var response = await client.GetParticipantStatsAsync(request);
+        var response = await client.GetStandingsAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 }

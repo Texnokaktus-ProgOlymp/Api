@@ -4,6 +4,6 @@ namespace Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 
 public interface IYandexIdUserServiceClient
 {
-    Task<string> GetOAuthUrlAsync(string? urlRequest);
-    Task<User> AuthenticateUserAsync(string code);
+    Task<string> GetOAuthUrlAsync(string? urlRequest, CancellationToken cancellationToken);
+    Task<User> AuthenticateUserAsync(string code, CancellationToken cancellationToken);
 }

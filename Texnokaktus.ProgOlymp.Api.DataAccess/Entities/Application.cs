@@ -20,6 +20,9 @@ public class Application
     public required bool PersonalDataConsent { get; init; }
     public required int Grade { get; init; }
 
+    public Participation? PreliminaryStageParticipation { get; set; }
+    public Participation? FinalStageParticipation { get; set; }
+
     public User User { get; set; }
     public Contest Contest { get; set; }
     public Region Region { get; set; }

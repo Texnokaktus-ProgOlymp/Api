@@ -1,29 +1,43 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.Logic.Observability;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Hosted;
 
-public class MetricsInitService(IServiceProvider serviceProvider) : BackgroundService
+public class MetricsInitService(IServiceProvider serviceProvider) : IHostedService
 {
-    /*
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
         var registeredUsersCounter = MeterProvider.Meter.CreateRegisteredUsersCounter();
 
-        foreach (var user in await unitOfWork.UserRepository.GetUsersAsync())
-            authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
+        await foreach (var login in context.Users
+                                            .Select(user => user.Login)
+                                            .AsAsyncEnumerable()
+                                            .WithCancellation(cancellationToken))
+        {
+            authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", login));
+        }
 
-        foreach (var application in await unitOfWork.ApplicationRepository.GetApplicationsAsync(1))
+        await foreach (var application in context.Applications
+                                                 .Select(application => new
+                                                  {
+                                                      application.ContestId,
+                                                      application.RegionId
+                                                  })
+                                                 .AsAsyncEnumerable()
+                                                 .WithCancellation(cancellationToken))
+        {
             registeredUsersCounter.Add(1,
                                        KeyValuePair.Create<string, object?>("contestId", application.ContestId),
                                        KeyValuePair.Create<string, object?>("regionId", application.RegionId));
+        }
     }
-    */
-    protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

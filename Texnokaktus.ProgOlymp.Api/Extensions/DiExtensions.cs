@@ -9,5 +9,6 @@ internal static class DiExtensions
         services.AddScoped<IAuthenticationService, JwtAuthenticationService>()
                 .AddScoped<IRegistrationService, RegistrationService>()
                 .AddScoped<IUserService, UserService>()
-                .AddScoped<IParticipationService, ParticipationService>();
+                .AddScoped<IParticipationService, ParticipationService>()
+                .AddScoped<IRegionService, RegionService>();
 }

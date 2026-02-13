@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Observability;
@@ -7,42 +8,42 @@ using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-public class UserService(IUnitOfWork unitOfWork, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
+public class UserService(AppDbContext context, IYandexIdUserServiceClient yandexIdUserServiceClient, TimeProvider timeProvider) : IUserService
 {
     private readonly Counter<int> _authenticatedUsersCounter = MeterProvider.Meter.CreateAuthenticatedUsersCounter();
-
-    public async Task<User?> GetByIdAsync(int id)
-    {
-        var user = await unitOfWork.UserRepository.GetUserByIdAsync(id);
-        return user?.MapUser();
-    }
-
     public async Task<User> AuthenticateUserAsync(string code)
     {
-        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code);
-        var dbUser = await ConvertToDbUserAsync(user);
-        await unitOfWork.SaveChangesAsync();
-        _authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
+        var user = await yandexIdUserServiceClient.AuthenticateUserAsync(code, CancellationToken.None);
 
-        return dbUser.MapUser();
-    }
-
-    private async Task<DataAccess.Entities.User> ConvertToDbUserAsync(Common.Contracts.Grpc.YandexId.User user)
-    {
-        if (await unitOfWork.UserRepository.GetUserByLoginAsync(user.Login) is not { } dbUser)
-            return unitOfWork.UserRepository.AddUser(new(user.Login, user.DisplayName, user.Avatar?.AvatarId, timeProvider.GetUtcNow()));
+        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Login == user.Login)
+                  ?? context.Users
+                            .Add(new()
+                             {
+                                 Login = user.Login,
+                                 DisplayName = user.DisplayName,
+                                 DefaultAvatar = user.Avatar?.AvatarId,
+                                 Created = timeProvider.GetUtcNow()
+                             })
+                            .Entity;
 
         dbUser.DisplayName = user.DisplayName;
         dbUser.DefaultAvatar = user.Avatar?.AvatarId;
-        return dbUser;
+        await context.SaveChangesAsync();
+
+        _authenticatedUsersCounter.Add(1, KeyValuePair.Create<string, object?>("login", user.Login));
+
+        return dbUser.MapUser();
     }
 }
 
 file static class MappingExtensions
 {
     public static User MapUser(this DataAccess.Entities.User user) =>
-        new(user.Id,
-            user.Login,
-            user.DisplayName,
-            user.DefaultAvatar);
+        new()
+        {
+            Id = user.Id,
+            Login = user.Login,
+            DisplayName = user.DisplayName,
+            DefaultAvatar = user.DefaultAvatar
+        };
 }

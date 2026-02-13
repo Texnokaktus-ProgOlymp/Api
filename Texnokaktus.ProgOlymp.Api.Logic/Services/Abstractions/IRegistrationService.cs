@@ -5,7 +5,6 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 public interface IRegistrationService
 {
-    Task<ContestRegistrationState?> GetRegistrationStateAsync(string contestName);
     Task<bool> IsUserRegisteredAsync(string contestName, int userId);
     Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel);
     Task<ContestApplications?> GetContestApplicationsAsync(string contestName);

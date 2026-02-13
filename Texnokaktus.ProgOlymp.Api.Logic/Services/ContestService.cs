@@ -1,70 +1,106 @@
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
-using Texnokaktus.ProgOlymp.Api.Domain;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
-internal class ContestService(IUnitOfWork unitOfWork, IContestDataServiceClient contestDataServiceClient) : IContestService
+internal class ContestService(AppDbContext context,
+                              IContestDataServiceClient contestDataServiceClient,
+                              IParticipantServiceClient participantServiceClient,
+                              TimeProvider timeProvider) : IContestService
 {
     public async Task<int> AddContestAsync(string name,
+                                           string title,
                                            DateTimeOffset registrationStart,
                                            DateTimeOffset registrationFinish,
                                            long? preliminaryStageId,
                                            long? finalStageId)
     {
-        var contest = unitOfWork.ContestRepository.AddContest(new(name, registrationStart, registrationFinish));
+        var contest = new Contest
+        {
+            Name = name,
+            Title = title,
+            RegistrationStart = registrationStart,
+            RegistrationFinish = registrationFinish
+        };
 
         if (preliminaryStageId.HasValue)
-        {
-            var description = await contestDataServiceClient.GetContestAsync(preliminaryStageId.Value);
-            contest.PreliminaryStage = new()
-            {
-                Id = preliminaryStageId.Value,
-                Name = description.Name,
-                ContestStart = description.StartTime.ToDateTimeOffset(),
-                Duration = description.Duration.ToTimeSpan()
-            };
-        }
+            contest.PreliminaryStage = await GetContestStageAsync(preliminaryStageId.Value, CancellationToken.None);
 
         if (finalStageId.HasValue)
-        {
-            var description = await contestDataServiceClient.GetContestAsync(finalStageId.Value);
-            contest.FinalStage = new()
-            {
-                Id = finalStageId.Value,
-                Name = description.Name,
-                ContestStart = description.StartTime.ToDateTimeOffset(),
-                Duration = description.Duration.ToTimeSpan()
-            };
-        }
+            contest.FinalStage = await GetContestStageAsync(finalStageId.Value, CancellationToken.None);
 
-        await unitOfWork.SaveChangesAsync();
+        context.Contests.Add(contest);
+
+        await context.SaveChangesAsync();
 
         return contest.Id;
     }
 
-    public async Task<Contest?> GetContestAsync(string contestName)
+    private async Task<ContestStage> GetContestStageAsync(long contestStageId, CancellationToken cancellationToken)
     {
-        var contest = await unitOfWork.ContestRepository.GetByName(contestName);
-        return contest?.MapContest();
+        var description = await contestDataServiceClient.GetContestAsync(contestStageId, cancellationToken);
+
+        var stage = new ContestStage
+        {
+            ContestId = contestStageId,
+            Name = description.Name,
+            ContestStart = description.StartTime.ToDateTimeOffset(),
+            Duration = description.Duration.ToTimeSpan()
+        };
+
+        if (await participantServiceClient.GetContestOwnerParticipationAsync(contestStageId, cancellationToken) is { } participantStatus)
+        {
+            stage.ContestFinish = participantStatus.ContestFinishTime?.ToDateTimeOffset();
+        }
+
+        return stage;
     }
+
+    public Task<Domain.Contest?> GetContestAsync(string contestName) =>
+        context.Contests
+               .Include(contest => contest.PreliminaryStage)
+               .Include(contest => contest.FinalStage)
+               .Where(contest => contest.Name == contestName)
+               .Select(contest => contest.MapContest(timeProvider.GetUtcNow()))
+               .FirstOrDefaultAsync();
 }
 
 file static class MappingExtensions
 {
-    public static Contest MapContest(this DataAccess.Entities.Contest contest) =>
-        new(contest.Id,
-            contest.Name,
-            contest.RegistrationStart,
-            contest.RegistrationFinish,
-            contest.PreliminaryStage?.MapContestStage(),
-            contest.FinalStage?.MapContestStage());
+    [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
+    private static Domain.RegistrationState GetState(Contest contest, DateTimeOffset now)
+    {
+        if (contest.PreliminaryStage is null)
+            return Domain.RegistrationState.Unavailable;
 
-    private static ContestStage MapContestStage(this DataAccess.Entities.ContestStage contestStage) =>
-        new(contestStage.Id,
-            contestStage.Name,
-            contestStage.ContestStart,
-            contestStage.ContestFinish,
-            contestStage.Duration);
+        if (now < contest.RegistrationStart) return Domain.RegistrationState.NotStarted;
+        if (now >= contest.RegistrationFinish) return Domain.RegistrationState.Finished;
+        return Domain.RegistrationState.InProgress;
+    }
+
+    public static Domain.Contest MapContest(this Contest contest, DateTimeOffset now) =>
+        new()
+        {
+            Id = contest.Id,
+            Name = contest.Name,
+            RegistrationStart = contest.RegistrationStart,
+            RegistrationFinish = contest.RegistrationFinish,
+            PreliminaryStage = contest.PreliminaryStage?.MapContestStage(),
+            FinalStage = contest.FinalStage?.MapContestStage(),
+            RegistrationState = GetState(contest, now)
+        };
+
+    private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
+        new()
+        {
+            Id = contestStage.ContestId,
+            Name = contestStage.Name,
+            ContestStart = contestStage.ContestStart,
+            ContestFinish = contestStage.ContestFinish,
+            Duration = contestStage.Duration
+        };
 }

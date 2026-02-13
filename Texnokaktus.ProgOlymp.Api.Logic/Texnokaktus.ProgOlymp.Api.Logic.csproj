@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Texnokaktus.ProgOlymp.Api.Infrastructure\Texnokaktus.ProgOlymp.Api.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Scrutor" />
+    <PackageReference Include="Quartz" />
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" />
   </ItemGroup>
 </Project>

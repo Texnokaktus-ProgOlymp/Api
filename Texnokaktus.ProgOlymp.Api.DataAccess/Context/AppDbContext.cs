@@ -9,7 +9,6 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 public class AppDbContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider) : DbContext(options)
 {
     public DbSet<Contest> Contests { get; set; }
-    public DbSet<ContestStage> ContestStages { get; set; }
     public DbSet<Region> Regions { get; set; }
     public DbSet<Application> Applications { get; set; }
     public DbSet<User> Users { get; set; }
@@ -25,26 +24,8 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
                    .IsUnicode()
                    .HasMaxLength(100);
 
-            builder.HasOne<ContestStage>(contest => contest.PreliminaryStage)
-                   .WithOne()
-                   .HasForeignKey<Contest>(contest => contest.PreliminaryStageId);
-
-            builder.HasOne<ContestStage>(contest => contest.FinalStage)
-                   .WithOne()
-                   .HasForeignKey<Contest>(contest => contest.FinalStageId);
-        });
-
-        modelBuilder.Entity<ContestStage>(builder =>
-        {
-            builder.HasKey(stage => stage.Id);
-            builder.Property(stage => stage.Id).ValueGeneratedNever();
-
-            builder.Property(stage => stage.Name)
-                   .IsUnicode()
-                   .HasMaxLength(100);
-
-            builder.Property(stage => stage.Duration)
-                   .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
+            builder.OwnsOne<ContestStage>(contest => contest.PreliminaryStage).ConfigureContestStage();
+            builder.OwnsOne<ContestStage>(contest => contest.FinalStage).ConfigureContestStage();
         });
 
         modelBuilder.Entity<Region>(builder =>
@@ -79,7 +60,7 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
                    .HasForeignKey(application => application.UserId);
 
             builder.HasOne(application => application.Contest)
-                   .WithMany()
+                   .WithMany(contest => contest.Applications)
                    .HasForeignKey(application => application.ContestId);
 
             builder.HasOne(application => application.Region)
@@ -88,6 +69,9 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
 
             builder.OwnsOne<ThirdPerson>(application => application.Parent);
             builder.OwnsOne<Teacher>(application => application.Teacher);
+
+            builder.OwnsOne<Participation>(application => application.PreliminaryStageParticipation);
+            builder.OwnsOne<Participation>(application => application.FinalStageParticipation);
         });
 
         modelBuilder.Entity<User>(builder =>
@@ -110,4 +94,16 @@ file static class EfExtensions
     public static PropertyBuilder<string?> IsEncrypted(this PropertyBuilder<string?> propertyBuilder,
                                                        IDataProtector dataProtector) =>
         propertyBuilder.HasConversion(new EncryptionConverter(dataProtector));
+
+    public static OwnedNavigationBuilder<TOwner, ContestStage> ConfigureContestStage<TOwner>(this OwnedNavigationBuilder<TOwner, ContestStage> navigationBuilder) where TOwner : class
+    {
+        navigationBuilder.Property(stage => stage.Name)
+                         .IsUnicode()
+                         .HasMaxLength(100);
+
+        navigationBuilder.Property(stage => stage.Duration)
+                         .HasConversion(timeSpan => timeSpan.Ticks, ticks => TimeSpan.FromTicks(ticks));
+
+        return navigationBuilder;
+    }
 }

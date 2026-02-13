@@ -1,40 +1,35 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Texnokaktus.ProgOlymp.Api.Domain;
+using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
-using ContestRegistrationState = Texnokaktus.ProgOlymp.Api.Models.ContestRegistrationState;
 using Name = Texnokaktus.ProgOlymp.Api.Models.Name;
 
 namespace Texnokaktus.ProgOlymp.Api.Services;
 
-public class RegistrationService(IContestService contestService, IRegistrationService registrationService) : Abstractions.IRegistrationService
+public class RegistrationService(IRegistrationService registrationService, ILogger<RegistrationService> logger) : Abstractions.IRegistrationService
 {
-    public async Task<Results<Ok<ContestRegistrationState>, NotFound>> GetRegistrationStateAsync(string contestName)
-    {
-        return await registrationService.GetRegistrationStateAsync(contestName) is { } registrationState
-                   ? TypedResults.Ok(new ContestRegistrationState(registrationState.ContestId,
-                                                                  registrationState.ContestName,
-                                                                  registrationState.RegistrationStart,
-                                                                  registrationState.RegistrationFinish,
-                                                                  registrationState.State))
-                   : TypedResults.NotFound();
-    }
-
     public async Task<Results<Created, NotFound, Conflict>> RegisterUserAsync(string contestName, int userId, ApplicationInsertModel insertModel)
     {
-        if (await contestService.GetContestAsync(contestName) is null)
-            return TypedResults.NotFound();
-
-        if (await registrationService.GetRegistrationStateAsync(contestName) is { State: not RegistrationState.InProgress })
-            return TypedResults.Conflict();
-
         if (await registrationService.IsUserRegisteredAsync(contestName, userId))
             return TypedResults.Conflict();
 
-        var model = insertModel.MapUserInsertModel(contestName, userId);
-        await registrationService.RegisterUserAsync(model);
+        try
+        {
+            var model = insertModel.MapUserInsertModel(contestName, userId);
+            await registrationService.RegisterUserAsync(model);
 
-        return TypedResults.Created();
+            return TypedResults.Created();
+        }
+        catch (RegistrationClosedException e)
+        {
+            logger.LogWarning(e, "User {UserId} tried to register when registration is closed", userId);
+            return TypedResults.Conflict();
+        }
+        catch (AlreadyRegisteredException e)
+        {
+            logger.LogWarning(e, "User {UserId} tried to register repeatedly", userId);
+            return TypedResults.Conflict();
+        }
     }
 }
 

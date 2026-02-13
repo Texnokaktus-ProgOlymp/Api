@@ -1,7 +1,10 @@
 namespace Texnokaktus.ProgOlymp.Api.Domain;
 
-public record ContestRegistrationState(int ContestId,
-                                       string ContestName,
-                                       DateTimeOffset RegistrationStart,
-                                       DateTimeOffset RegistrationFinish,
-                                       RegistrationState State);
+public record ContestRegistrationState
+{
+    public required int ContestId { get; init; }
+    public required string ContestName { get; init; }
+    public required DateTimeOffset RegistrationStart { get; init; }
+    public required DateTimeOffset RegistrationFinish { get; init; }
+    public required RegistrationState State { get; init; }
+}

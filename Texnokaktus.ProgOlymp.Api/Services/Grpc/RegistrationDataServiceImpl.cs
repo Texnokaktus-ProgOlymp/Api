@@ -2,6 +2,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
+using Texnokaktus.ProgOlymp.Common.Contracts.Exceptions;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Data;
 
 namespace Texnokaktus.ProgOlymp.Api.Services.Grpc;
@@ -24,7 +25,7 @@ public class RegistrationDataServiceImpl(IRegistrationService registrationServic
                     }
                 }
             }
-            : throw new RpcException(new(StatusCode.NotFound, $"Contest {request.ContestName} was not found"));
+            : throw new NotFoundException($"Contest {request.ContestName} was not found");
 }
 
 file static class MappingExtensions

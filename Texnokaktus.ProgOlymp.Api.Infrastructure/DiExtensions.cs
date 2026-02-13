@@ -12,10 +12,12 @@ public static class DiExtensions
     public static IServiceCollection AddGrpcClients(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddGrpcClient<ContestDataService.ContestDataServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(ContestDataService)));
+        services.AddGrpcClient<ParticipantService.ParticipantServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(ParticipantService)));
         services.AddGrpcClient<RegistrationService.RegistrationServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(RegistrationService)));
         services.AddGrpcClient<UserService.UserServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(UserService)));
 
         return services.AddScoped<IContestDataServiceClient, ContestDataServiceClient>()
+                       .AddScoped<IParticipantServiceClient, ParticipantServiceClient>()
                        .AddScoped<IRegistrationServiceClient, RegistrationServiceClient>()
                        .AddScoped<IYandexIdUserServiceClient, YandexIdUserServiceClient>();
     }

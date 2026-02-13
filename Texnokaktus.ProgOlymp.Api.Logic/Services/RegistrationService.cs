@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
-using Texnokaktus.ProgOlymp.Api.DataAccess.Services.Abstractions;
+using Microsoft.EntityFrameworkCore;
+using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.Domain;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Logic.Exceptions;
@@ -13,154 +14,181 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
                                  TimeProvider timeProvider,
-                                 IUnitOfWork unitOfWork,
-                                 IUserService userService) : IRegistrationService
+                                 AppDbContext context) : IRegistrationService
 {
     private readonly Counter<int> _registeredUsers = MeterProvider.Meter.CreateRegisteredUsersCounter();
     private readonly Counter<int> _yandexContestRegisteredUsers = MeterProvider.Meter.CreateCounter<int>("users.registered.yandex-contest");
 
-    public async Task<ContestRegistrationState?> GetRegistrationStateAsync(string contestName)
-    {
-        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
-
-        return new(contest.Id,
-                   contest.Name,
-                   contest.RegistrationStart,
-                   contest.RegistrationFinish,
-                   GetState(contest, timeProvider.GetUtcNow()));
-    }
-
     public Task<bool> IsUserRegisteredAsync(string contestName, int userId) =>
-        unitOfWork.ApplicationRepository.ExistsAsync(application => application.Contest.Name == contestName
-                                                                 && application.UserId == userId);
+        context.Applications.AnyAsync(application => application.Contest.Name == contestName
+                                                  && application.UserId == userId);
 
     public async Task<int> RegisterUserAsync(ApplicationInsertModel userInsertModel)
     {
         var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
                    ?? throw new ContestNotFoundException(userInsertModel.ContestName);
 
+        if (contest.RegistrationState != RegistrationState.InProgress)
+            throw new RegistrationClosedException(contest.Name);
+
+        var userLogin = await context.Users
+                                     .Where(user => user.Id == userInsertModel.UserId)
+                                     .Select(user => user.Login)
+                                     .FirstOrDefaultAsync()
+                     ?? throw new UserNotFoundException(userInsertModel.UserId);
+
+        if (await context.Applications.AnyAsync(application => application.UserId == userInsertModel.UserId
+                                                            && application.ContestId == contest.Id))
+            throw new AlreadyRegisteredException(contest.Name, userInsertModel.UserId);
+
         var uid = Guid.NewGuid();
 
-        var entity = unitOfWork.ApplicationRepository.Add(userInsertModel.MapUserInsertModel(timeProvider.GetUtcNow(), uid, contest.Id));
+        await using var transaction = await context.Database.BeginTransactionAsync();
 
-        await unitOfWork.SaveChangesAsync();
+        var entity = context.Applications
+                            .Add(new()
+                             {
+                                 UserId = userInsertModel.UserId,
+                                 ContestId = contest.Id,
+                                 Uid = uid,
+                                 Created = timeProvider.GetUtcNow(),
+                                 FirstName = userInsertModel.Name.FirstName,
+                                 LastName = userInsertModel.Name.LastName,
+                                 Patronym = userInsertModel.Name.Patronym,
+                                 BirthDate = userInsertModel.BirthDate,
+                                 Snils = userInsertModel.Snils,
+                                 Email = userInsertModel.Email,
+                                 SchoolName = userInsertModel.SchoolName,
+                                 RegionId = userInsertModel.RegionId,
+                                 Parent = new()
+                                 {
+                                     FirstName = userInsertModel.Parent.Name.FirstName,
+                                     LastName = userInsertModel.Parent.Name.LastName,
+                                     Patronym = userInsertModel.Parent.Name.Patronym,
+                                     Email = userInsertModel.Parent.Email,
+                                     Phone = userInsertModel.Parent.Phone
+                                 },
+                                 Teacher = new()
+                                 {
+                                     School = userInsertModel.Teacher.School,
+                                     FirstName = userInsertModel.Teacher.Name.FirstName,
+                                     LastName = userInsertModel.Teacher.Name.LastName,
+                                     Patronym = userInsertModel.Teacher.Name.Patronym,
+                                     Email = userInsertModel.Teacher.Email,
+                                     Phone = userInsertModel.Teacher.Phone
+                                 },
+                                 PersonalDataConsent = userInsertModel.PersonalDataConsent,
+                                 Grade = userInsertModel.Grade
+                             })
+                            .Entity;
+
+        await context.SaveChangesAsync();
+
+        entity.PreliminaryStageParticipation = new()
+        {
+            ContestUserId = await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N")),
+            State = DataAccess.Entities.ParticipationState.NotStarted
+        };
+
+        await context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
 
         _registeredUsers.Add(1,
                              KeyValuePair.Create<string, object?>("contestName", userInsertModel.ContestName),
                              KeyValuePair.Create<string, object?>("regionId", userInsertModel.RegionId));
 
-        var user = await userService.GetByIdAsync(userInsertModel.UserId)
-                ?? throw new UserNotFoundException(userInsertModel.UserId);
-
-        await RegisterUserToPreliminaryStageAsync(contest, user.Login, uid.ToString("N"));
-
         return entity.Id;
     }
 
-    public async Task<ContestApplications?> GetContestApplicationsAsync(string contestName)
+    public async Task<ContestApplications?> GetContestApplicationsAsync(string contestName) =>
+        await contestService.GetContestAsync(contestName) is { } contest
+            ? new()
+            {
+                Contest = contest,
+                Applications = await context.Applications
+                                            .Include(application => application.User)
+                                            .Include(application => application.Region)
+                                            .Where(application => application.Contest.Name == contestName)
+                                            .Select(application => application.MapDomainApplication())
+                                            .ToArrayAsync()
+            }
+            : null;
+
+    private async Task<long> RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
     {
-        if (await contestService.GetContestAsync(contestName) is not { } contest) return null;
-
-        var applications = await unitOfWork.ApplicationRepository.GetApplicationsAsync(contestName);
-
-        return new(contest, applications.Select(application => application.MapDomainApplication()));
-    }
-
-    private async Task RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
-    {
-        await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
+        var contestUserId = await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
-    }
-
-    [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
-    private static RegistrationState GetState(Contest contest, DateTimeOffset now)
-    {
-        if (contest.PreliminaryStage is null)
-            return RegistrationState.Unavailable;
-
-        if (now < contest.RegistrationStart) return RegistrationState.NotStarted;
-        if (now >= contest.RegistrationFinish) return RegistrationState.Finished;
-        return RegistrationState.InProgress;
+        return contestUserId;
     }
 }
 
 file static class MappingExtensions
 {
-    public static DataAccess.Models.ApplicationInsertModel MapUserInsertModel(this ApplicationInsertModel userInsertModel, DateTimeOffset created, Guid uid, int contestId) =>
-        new(userInsertModel.UserId,
-            contestId,
-            uid,
-            created,
-            userInsertModel.Name.MapName(),
-            userInsertModel.BirthDate,
-            userInsertModel.Snils,
-            userInsertModel.Email,
-            userInsertModel.SchoolName,
-            userInsertModel.RegionId,
-            userInsertModel.Parent.MapThirdPerson(),
-            userInsertModel.Teacher.MapTeacher(),
-            userInsertModel.PersonalDataConsent,
-            userInsertModel.Grade);
+    public static Application MapDomainApplication(this DataAccess.Entities.Application application) =>
+        new()
+        {
+            Id = application.Id,
+            Uid = application.Uid,
+            User = application.User.MapUser(),
+            Created = application.Created,
+            ParticipantData = application.MapParticipantData(),
+            ParentData = application.Parent.MapParentData(),
+            TeacherData = application.Teacher.MapTeacherData(),
+            PersonalDataConsent = application.PersonalDataConsent
+        };
 
-    private static DataAccess.Models.Teacher MapTeacher(this Teacher teacher)
-    {
-        var thirdPerson = teacher.MapThirdPerson();
-        return new(thirdPerson.Name,
-                   thirdPerson.Email,
-                   thirdPerson.Phone,
-                   teacher.School);
-    }
+    private static ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
+        new()
+        {
+            Name = new()
+            {
+                FirstName = application.FirstName,
+                LastName = application.LastName,
+                Patronym = application.Patronym
+            },
+            BirthDate = application.BirthDate,
+            Snils = application.Snils,
+            IsSnilsValid = true, // TODO Add validation
+            Email = application.Email,
+            School = application.SchoolName,
+            Region = application.Region.Name,
+            Grade = application.Grade
+        };
 
-    private static DataAccess.Models.ThirdPerson MapThirdPerson(this Models.ThirdPerson thirdPerson) =>
-        new(thirdPerson.Name.MapName(),
-            thirdPerson.Email,
-            thirdPerson.Phone);
+    private static ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
+        new()
+        {
+            Name = new()
+            {
+                FirstName = parent.FirstName,
+                LastName = parent.LastName,
+                Patronym = parent.Patronym
+            },
+            Email = parent.Email,
+            Phone = parent.Phone
+        };
 
-    private static DataAccess.Models.Name MapName(this Models.Name name) =>
-        new(name.FirstName,
-            name.LastName,
-            name.Patronym);
-
-    public static Domain.Application MapDomainApplication(this DataAccess.Entities.Application application) =>
-        new(application.Id,
-            application.Uid,
-            application.User.MapUser(),
-            application.Created,
-            application.MapParticipantData(),
-            application.Parent.MapParentData(),
-            application.Teacher.MapTeacherData(),
-            application.PersonalDataConsent);
-
-    private static Domain.ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
-        new(new(application.FirstName,
-                application.LastName,
-                application.Patronym),
-            application.BirthDate,
-            application.Snils,
-            true, // TODO Add validation
-            application.Email,
-            application.SchoolName,
-            application.Region.Name,
-            application.Grade);
-
-    private static Domain.ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
-        new(new(parent.FirstName,
-                parent.LastName,
-                parent.Patronym),
-            parent.Email,
-            parent.Phone);
-
-    private static Domain.TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
-        new(new(teacher.FirstName,
-                teacher.LastName,
-                teacher.Patronym),
-            teacher.Email,
-            teacher.Phone,
-            teacher.School);
+    private static TeacherData MapTeacherData(this DataAccess.Entities.Teacher teacher) =>
+        new()
+        {
+            Name = new()
+            {
+                FirstName = teacher.FirstName,
+                LastName = teacher.LastName,
+                Patronym = teacher.Patronym
+            },
+            Email = teacher.Email,
+            Phone = teacher.Phone,
+            School = teacher.School
+        };
 
     private static User MapUser(this DataAccess.Entities.User user) =>
-        new(user.Id,
-            user.Login,
-            user.DisplayName,
-            user.DefaultAvatar);
+        new()
+        {
+            Id = user.Id,
+            Login = user.Login,
+            DisplayName = user.DisplayName,
+            DefaultAvatar = user.DefaultAvatar
+        };
 }

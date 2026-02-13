@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using FluentValidation;
-using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Api.Models;
+using Texnokaktus.ProgOlymp.Api.Services.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Validators;
 
