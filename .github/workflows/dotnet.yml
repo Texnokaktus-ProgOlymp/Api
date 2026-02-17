@@ -5,9 +5,7 @@ name: .NET
 
 on:
   push:
-    branches: [ "master", "dev" ]
-  pull_request:
-    branches: [ "master", "dev" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -35,7 +33,6 @@ jobs:
 
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
 
     env:
       REGISTRY: ghcr.io
