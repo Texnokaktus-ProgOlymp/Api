@@ -93,6 +93,14 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Push tag
+        run: |
+          tag=${{ steps.get-version.outputs.version }}
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag "v${tag}"
+          git push origin "v${tag}"
+
   deploy:
     
     needs: docker
