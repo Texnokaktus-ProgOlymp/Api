@@ -17,7 +17,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -84,7 +84,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Applications");
+                    b.ToTable("Applications", (string)null);
                 });
 
             modelBuilder.Entity("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.Contest", b =>
@@ -123,7 +123,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
                         .IsUnique()
                         .HasFilter("[PreliminaryStageId] IS NOT NULL");
 
-                    b.ToTable("Contests");
+                    b.ToTable("Contests", (string)null);
                 });
 
             modelBuilder.Entity("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.ContestStage", b =>
@@ -148,7 +148,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContestStages");
+                    b.ToTable("ContestStages", (string)null);
                 });
 
             modelBuilder.Entity("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.Region", b =>
@@ -172,7 +172,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Regions");
+                    b.ToTable("Regions", (string)null);
                 });
 
             modelBuilder.Entity("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.User", b =>
@@ -204,7 +204,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
 
                     b.HasAlternateKey("Login");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.Application", b =>
@@ -226,6 +226,36 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsOne("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.ThirdPerson", "Parent", b1 =>
+                        {
+                            b1.Property<int>("ApplicationId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Email")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("FirstName")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("LastName")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Patronym")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Phone")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("ApplicationId");
+
+                            b1.ToTable("Applications", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationId");
+                        });
 
                     b.OwnsOne("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.Teacher", "Teacher", b1 =>
                         {
@@ -255,37 +285,7 @@ namespace Texnokaktus.ProgOlymp.Api.DataAccess.Migrations
 
                             b1.HasKey("ApplicationId");
 
-                            b1.ToTable("Applications");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ApplicationId");
-                        });
-
-                    b.OwnsOne("Texnokaktus.ProgOlymp.Api.DataAccess.Entities.ThirdPerson", "Parent", b1 =>
-                        {
-                            b1.Property<int>("ApplicationId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Email")
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("FirstName")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("LastName")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("Patronym")
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("Phone")
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.HasKey("ApplicationId");
-
-                            b1.ToTable("Applications");
+                            b1.ToTable("Applications", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationId");
