@@ -46,7 +46,7 @@ internal class ContestService(AppDbContext context,
 
         var stage = new ContestStage
         {
-            ContestId = contestStageId,
+            YandexContestId = contestStageId,
             Name = description.Name,
             ContestStart = description.StartTime.ToDateTimeOffset(),
             Duration = description.Duration.ToTimeSpan()
@@ -97,7 +97,7 @@ file static class MappingExtensions
     private static Domain.ContestStage MapContestStage(this ContestStage contestStage) =>
         new()
         {
-            Id = contestStage.ContestId,
+            Id = contestStage.YandexContestId,
             Name = contestStage.Name,
             ContestStart = contestStage.ContestStart,
             ContestFinish = contestStage.ContestFinish,

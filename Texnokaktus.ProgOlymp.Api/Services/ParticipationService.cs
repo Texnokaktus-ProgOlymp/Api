@@ -30,7 +30,7 @@ public class ParticipationService(AppDbContext context) : IParticipationService
         return TypedResults.Ok(new ContestParticipation
         {
             IsUserRegistered = true,
-            PreliminaryStageParticipation = application.PreliminaryStageParticipation?.MapContestStageParticipation(application.Contest.PreliminaryStage?.ContestId),
+            PreliminaryStageParticipation = application.PreliminaryStageParticipation?.MapContestStageParticipation(application.Contest.PreliminaryStage?.YandexContestId),
             FinalStageParticipation = application.FinalStageParticipation?.MapContestStageParticipation(null)
         });
     }

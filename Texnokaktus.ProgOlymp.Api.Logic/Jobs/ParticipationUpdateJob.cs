@@ -37,7 +37,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
                                                Func<Application, Participation?> participationSelector,
                                                CancellationToken cancellationToken)
     {
-        var contestParticipants = await client.GetContestParticipantsAsync(stage.ContestId, cancellationToken);
+        var contestParticipants = await client.GetContestParticipantsAsync(stage.YandexContestId, cancellationToken);
 
         foreach (var arg in applications.Join(contestParticipants,
                                               application => participationSelector.Invoke(application)?.ContestUserId,
@@ -52,7 +52,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
             if (participation.State == ParticipationState.Finished) return;
             if (arg.ContestParticipantInfo.StartTime is null) return;
 
-            var participantStatus = await client.GetParticipantStatusAsync(stage.ContestId, arg.Application.Id, cancellationToken);
+            var participantStatus = await client.GetParticipantStatusAsync(stage.YandexContestId, arg.Application.Id, cancellationToken);
 
             participation.Start = participantStatus.StartTime?.ToDateTimeOffset();
             participation.Finish = participantStatus.FinishTime?.ToDateTimeOffset();
