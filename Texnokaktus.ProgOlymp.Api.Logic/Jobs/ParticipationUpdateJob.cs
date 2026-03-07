@@ -27,9 +27,9 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
                                               contest.Applications,
                                               application => application.FinalStageParticipation,
                                               context.CancellationToken);
-
-            await dbContext.SaveChangesAsync(context.CancellationToken);
         }
+
+        await dbContext.SaveChangesAsync(context.CancellationToken);
     }
 
     private async Task UpdateContestStageAsync(ContestStage stage,
