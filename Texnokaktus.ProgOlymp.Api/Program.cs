@@ -51,10 +51,12 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.C
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 builder.Services
-       .AddGrpcHealthChecks()
+       .AddHealthChecks()
        .AddDatabaseHealthChecks();
 
-builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom
+                                                                 .Configuration(context.Configuration)
+                                                                 .AddOpenTelemetrySupport("API"));
 
 builder.Services.AddTexnokaktusOpenTelemetry("API",
                                              null,
@@ -83,8 +85,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-app.MapGrpcHealthChecksService();
 
 app.UseCors();
 
