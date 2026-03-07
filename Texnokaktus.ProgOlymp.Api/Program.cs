@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Trace;
 using Quartz;
 using Quartz.AspNetCore;
 using Serilog;
@@ -59,7 +60,7 @@ builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom
                                                                  .AddOpenTelemetrySupport("API"));
 
 builder.Services.AddTexnokaktusOpenTelemetry("API",
-                                             null,
+                                             tracerProviderBuilder => tracerProviderBuilder.AddQuartzInstrumentation(),
                                              meterProviderBuilder => meterProviderBuilder.AddMeter(Texnokaktus.ProgOlymp.Api.Logic.Observability.Constants.MeterName));
 
 builder.Services
