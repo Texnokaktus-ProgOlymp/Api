@@ -49,8 +49,8 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
                                               }))
         {
             if (participationSelector.Invoke(arg.Application) is not { } participation) continue;
-            if (participation.State == ParticipationState.Finished) return;
-            if (arg.ContestParticipantInfo.StartTime is null) return;
+            if (participation.State == ParticipationState.Finished) continue;
+            if (arg.ContestParticipantInfo.StartTime is null) continue;
 
             var participantStatus = await client.GetParticipantStatusAsync(stage.YandexContestId, arg.Application.Id, cancellationToken);
 
