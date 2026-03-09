@@ -14,7 +14,7 @@ public class ParticipantServiceImpl(IRegistrationService registrationService) : 
 
         return new()
         {
-            ContestName = contestApplications.Contest.Name,
+            ContestTitle = contestApplications.Contest.Title,
             ParticipantGroups =
             {
                 contestApplications.Applications

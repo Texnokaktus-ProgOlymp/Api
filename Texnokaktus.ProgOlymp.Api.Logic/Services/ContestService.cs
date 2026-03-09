@@ -87,6 +87,7 @@ file static class MappingExtensions
         {
             Id = contest.Id,
             Name = contest.Name,
+            Title = contest.Title,
             RegistrationStart = contest.RegistrationStart,
             RegistrationFinish = contest.RegistrationFinish,
             PreliminaryStage = contest.PreliminaryStage?.MapContestStage(),

@@ -17,7 +17,7 @@ public class RegistrationDataServiceImpl(IRegistrationService registrationServic
                 {
                     Contest = new()
                     {
-                        Name = contestApplications.Contest.Name
+                        Title = contestApplications.Contest.Title
                     },
                     Registrations =
                     {

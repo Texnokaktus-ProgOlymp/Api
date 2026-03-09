@@ -20,8 +20,7 @@ internal static class EndpointsMapper
             if (await contestService.GetContestAsync(contestName) is not { } contest)
                 return TypedResults.NotFound();
 
-            return TypedResults.Ok(new ContestRegistrationState(contest.Id,
-                                                                contest.Name,
+            return TypedResults.Ok(new ContestRegistrationState(contest.Title,
                                                                 contest.RegistrationStart,
                                                                 contest.RegistrationFinish,
                                                                 contest.RegistrationState));
