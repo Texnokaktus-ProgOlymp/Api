@@ -10,4 +10,7 @@ public record Application
     public required ParentData ParentData { get; init; }
     public required TeacherData TeacherData { get; init; }
     public required bool PersonalDataConsent { get; init; }
+    
+    public Participation? PreliminaryStageParticipation { get; init; }
+    public Participation? FinalStageParticipation { get; init; }
 }

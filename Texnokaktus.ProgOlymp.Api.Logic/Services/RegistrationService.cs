@@ -135,7 +135,9 @@ file static class MappingExtensions
             ParticipantData = application.MapParticipantData(),
             ParentData = application.Parent.MapParentData(),
             TeacherData = application.Teacher.MapTeacherData(),
-            PersonalDataConsent = application.PersonalDataConsent
+            PersonalDataConsent = application.PersonalDataConsent,
+            PreliminaryStageParticipation = application.PreliminaryStageParticipation?.MapParticipation(),
+            FinalStageParticipation = application.FinalStageParticipation?.MapParticipation()
         };
 
     private static ParticipantData MapParticipantData(this DataAccess.Entities.Application application) =>
@@ -155,6 +157,24 @@ file static class MappingExtensions
             Region = application.Region.Name,
             Grade = application.Grade
         };
+
+    private static Participation MapParticipation(this DataAccess.Entities.Participation participation) =>
+        new()
+        {
+            YandexContestId = participation.ContestUserId,
+            State = participation.State.MapParticipationState(),
+            Start = participation.Start,
+            Finish = participation.Finish
+        };
+
+    private static ParticipationState MapParticipationState(this DataAccess.Entities.ParticipationState participationState) =>
+        participationState switch
+        {
+            DataAccess.Entities.ParticipationState.NotStarted => ParticipationState.NotStarted,
+            DataAccess.Entities.ParticipationState.InProgress => ParticipationState.InProgress,
+            DataAccess.Entities.ParticipationState.Finished   => ParticipationState.Finished,
+            _                                                 => throw new ArgumentOutOfRangeException(nameof(participationState), participationState, $"Unable to map {nameof(ParticipationState)}")
+        }; 
 
     private static ParentData MapParentData(this DataAccess.Entities.ThirdPerson parent) =>
         new()

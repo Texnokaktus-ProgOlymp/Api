@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Texnokaktus.ProgOlymp.Api.Logic.Services.Abstractions;
 using Texnokaktus.ProgOlymp.Common.Contracts.Exceptions;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Common;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Data;
 
 namespace Texnokaktus.ProgOlymp.Api.Services.Grpc;
@@ -17,7 +18,9 @@ public class RegistrationDataServiceImpl(IRegistrationService registrationServic
                 {
                     Contest = new()
                     {
-                        Title = contestApplications.Contest.Title
+                        Title = contestApplications.Contest.Title,
+                        PreliminaryStageContestId = contestApplications.Contest.PreliminaryStage?.Id,
+                        FinalStageContestId = contestApplications.Contest.FinalStage?.Id
                     },
                     Registrations =
                     {
@@ -40,7 +43,9 @@ file static class MappingExtensions
             ParentData = application.ParentData.MapParentData(),
             TeacherData = application.TeacherData.MapTeacherData(),
             PersonalDataConsent = application.PersonalDataConsent,
-            Uid = ByteString.CopyFrom(application.Uid?.ToByteArray() ?? [])
+            Uid = ByteString.CopyFrom(application.Uid?.ToByteArray() ?? []),
+            PreliminaryParticipation = application.PreliminaryStageParticipation?.MapContestParticipation(),
+            FinalParticipation = application.FinalStageParticipation?.MapContestParticipation()
         };
 
     private static ParticipantData MapParticipantData(this Domain.ParticipantData participantData) =>
@@ -88,5 +93,21 @@ file static class MappingExtensions
             FirstName = name.FirstName,
             LastName = name.LastName,
             Patronym = name.Patronym
+        };
+
+    private static ContestParticipation MapContestParticipation(this Domain.Participation participation) =>
+        new()
+        {
+            YandexContestId = participation.YandexContestId,
+            State = participation.State.MapParticipationState()
+        };
+
+    private static ParticipationState MapParticipationState(this Domain.ParticipationState participationState) =>
+        participationState switch
+        {
+            Domain.ParticipationState.NotStarted => ParticipationState.NotStarted,
+            Domain.ParticipationState.InProgress => ParticipationState.InProgress,
+            Domain.ParticipationState.Finished   => ParticipationState.Finished,
+            _                                    => throw new ArgumentOutOfRangeException(nameof(participationState), participationState, $"Unable to map {nameof(ParticipationState)}")
         };
 }

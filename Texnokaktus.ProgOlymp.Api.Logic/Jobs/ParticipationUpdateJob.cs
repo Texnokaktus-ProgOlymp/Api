@@ -63,12 +63,12 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
 
 file static class MappingExtensions
 {
-    public static ParticipationState MapParticipationState(this Common.Contracts.Grpc.YandexContest.ParticipationState state) =>
+    public static ParticipationState MapParticipationState(this Common.Contracts.Grpc.Common.ParticipationState state) =>
         state switch
         {
-            Common.Contracts.Grpc.YandexContest.ParticipationState.NotStarted => ParticipationState.NotStarted,
-            Common.Contracts.Grpc.YandexContest.ParticipationState.InProgress => ParticipationState.InProgress,
-            Common.Contracts.Grpc.YandexContest.ParticipationState.Finished   => ParticipationState.Finished,
-            _                                                                 => throw new ArgumentOutOfRangeException(nameof(state), state, $"Unable to map {nameof(ParticipationState)}")
+            Common.Contracts.Grpc.Common.ParticipationState.NotStarted => ParticipationState.NotStarted,
+            Common.Contracts.Grpc.Common.ParticipationState.InProgress => ParticipationState.InProgress,
+            Common.Contracts.Grpc.Common.ParticipationState.Finished   => ParticipationState.Finished,
+            _                                                          => throw new ArgumentOutOfRangeException(nameof(state), state, $"Unable to map {nameof(ParticipationState)}")
         };
 }
