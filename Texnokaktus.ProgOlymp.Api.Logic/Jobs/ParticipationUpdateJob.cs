@@ -52,7 +52,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
             if (participation.State == ParticipationState.Finished) continue;
             if (arg.ContestParticipantInfo.StartTime is null) continue;
 
-            var participantStatus = await client.GetParticipantStatusAsync(stage.YandexContestId, arg.Application.Id, cancellationToken);
+            var participantStatus = await client.GetParticipantStatusAsync(stage.YandexContestId, participation.ContestUserId, cancellationToken);
 
             participation.Start = participantStatus.StartTime?.ToDateTimeOffset();
             participation.Finish = participantStatus.FinishTime?.ToDateTimeOffset();

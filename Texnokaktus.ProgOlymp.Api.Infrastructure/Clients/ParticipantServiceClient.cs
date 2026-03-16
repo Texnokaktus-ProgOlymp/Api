@@ -27,24 +27,24 @@ public class ParticipantServiceClient(ParticipantService.ParticipantServiceClien
         return response.Result;
     }
 
-    public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, int participantId, CancellationToken cancellationToken)
+    public async Task<ParticipantStatus> GetParticipantStatusAsync(long contestStageId, long contestParticipantId, CancellationToken cancellationToken)
     {
         var request = new ParticipantStatusRequest
         {
             ContestId = contestStageId,
-            ParticipantId = participantId
+            ContestParticipantId = contestParticipantId
         };
 
         var response = await client.GetParticipantStatusAsync(request, cancellationToken: cancellationToken);
         return response.Result;
     }
 
-    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int participantId, CancellationToken cancellationToken)
+    public async Task<ParticipantStats> GetParticipantStatsAsync(long contestStageId, int contestParticipantId, CancellationToken cancellationToken)
     {
         var request = new ParticipantStatsRequest
         {
             ContestId = contestStageId,
-            ParticipantId = participantId
+            ContestParticipantId = contestParticipantId
         };
 
         var response = await client.GetParticipantStatsAsync(request, cancellationToken: cancellationToken);
