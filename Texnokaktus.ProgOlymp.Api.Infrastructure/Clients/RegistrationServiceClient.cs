@@ -14,6 +14,6 @@ public class RegistrationServiceClient(RegistrationService.RegistrationServiceCl
             DisplayName = displayName
         };
         var response = await client.RegisterParticipantAsync(request);
-        return response.ContestUserId;
+        return response.ContestParticipantId;
     }
 }
