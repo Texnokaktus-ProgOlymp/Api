@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.Results;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexContest;
 using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexId;
 
@@ -14,11 +15,13 @@ public static class DiExtensions
         services.AddGrpcClient<ContestDataService.ContestDataServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(ContestDataService)));
         services.AddGrpcClient<ParticipantService.ParticipantServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(ParticipantService)));
         services.AddGrpcClient<RegistrationService.RegistrationServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(RegistrationService)));
+        services.AddGrpcClient<ResultService.ResultServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(ResultService)));
         services.AddGrpcClient<UserService.UserServiceClient>(options => options.Address = configuration.GetConnectionStringUri(nameof(UserService)));
 
         return services.AddScoped<IContestDataServiceClient, ContestDataServiceClient>()
                        .AddScoped<IParticipantServiceClient, ParticipantServiceClient>()
                        .AddScoped<IRegistrationServiceClient, RegistrationServiceClient>()
+                       .AddScoped<IResultServiceClient, ResultServiceClient>()
                        .AddScoped<IYandexIdUserServiceClient, YandexIdUserServiceClient>();
     }
 
