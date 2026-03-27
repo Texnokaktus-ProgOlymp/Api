@@ -8,6 +8,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Jobs;
 
 internal class ParticipationUpdateJob(AppDbContext dbContext,
                                       IParticipantServiceClient participantServiceClient,
+                                      IContestDataServiceClient contestDataServiceClient,
                                       IResultServiceClient resultServiceClient,
                                       TimeProvider timeProvider) : IJob
 {
@@ -20,13 +21,17 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
             context.CancellationToken.ThrowIfCancellationRequested();
 
             if (contest.PreliminaryStage is { } preliminaryStage)
-                await UpdateContestStageAsync(preliminaryStage,
+                await UpdateContestStageAsync(contest.Name,
+                                              Common.Contracts.Grpc.Results.ContestStage.Preliminary,
+                                              preliminaryStage,
                                               contest.Applications,
                                               application => application.PreliminaryStageParticipation,
                                               context.CancellationToken);
 
             if (contest.FinalStage is { } finalStage)
-                await UpdateContestStageAsync(finalStage,
+                await UpdateContestStageAsync(contest.Name,
+                                              Common.Contracts.Grpc.Results.ContestStage.Final,
+                                              finalStage,
                                               contest.Applications,
                                               application => application.FinalStageParticipation,
                                               context.CancellationToken);
@@ -35,7 +40,9 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
         await dbContext.SaveChangesAsync(context.CancellationToken);
     }
 
-    private async Task UpdateContestStageAsync(ContestStage stage,
+    private async Task UpdateContestStageAsync(string contestName,
+                                               Common.Contracts.Grpc.Results.ContestStage stageType,
+                                               ContestStage stage,
                                                IEnumerable<Application> applications,
                                                Func<Application, Participation?> participationSelector,
                                                CancellationToken cancellationToken)
@@ -52,7 +59,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
         stage.ContestFinish = contestFinish;
 
         if (stage.State == ContestStageState.NotStarted && now >= stage.ContestStart)
-            await StartContestStageAsync(stage, cancellationToken);
+            await StartContestStageAsync(contestName, stageType, stage, cancellationToken);
 
         var contestParticipants = await participantServiceClient.GetContestParticipantsAsync(stage.YandexContestId, cancellationToken);
 
@@ -82,20 +89,20 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
         }
         
         if (stage.State == ContestStageState.InProgress && now >= stage.ContestFinish && inProgressParticipantsCount == 0)
-            await FinishContestStageAsync(stage, cancellationToken);
+            await FinishContestStageAsync(contestName, stageType, stage, cancellationToken);
     }
 
-    private async Task StartContestStageAsync(ContestStage stage, CancellationToken cancellationToken)
+    private async Task StartContestStageAsync(string contestName, Common.Contracts.Grpc.Results.ContestStage stageType, ContestStage stage, CancellationToken cancellationToken)
     {
         stage.State = ContestStageState.InProgress;
 
-        /*
-         * Create a contest in ResultService
-         * Download problems
-         */
+        await resultServiceClient.AddContestAsync(contestName, stageType, stage.YandexContestId, cancellationToken);
+
+        foreach (var problem in await contestDataServiceClient.GetContestProblemsAsync(stage.YandexContestId, cancellationToken))
+            await resultServiceClient.AddProblemAsync(contestName, stageType, problem.Alias, problem.Name, cancellationToken);
     }
 
-    private async Task FinishContestStageAsync(ContestStage stage, CancellationToken cancellationToken)
+    private async Task FinishContestStageAsync(string contestName, Common.Contracts.Grpc.Results.ContestStage stageType,ContestStage stage, CancellationToken cancellationToken)
     {
         stage.State = ContestStageState.Finished;
 
