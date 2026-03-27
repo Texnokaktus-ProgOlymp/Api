@@ -6,7 +6,10 @@ using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Jobs;
 
-internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServiceClient client) : IJob
+internal class ParticipationUpdateJob(AppDbContext dbContext,
+                                      IParticipantServiceClient participantServiceClient,
+                                      IResultServiceClient resultServiceClient,
+                                      TimeProvider timeProvider) : IJob
 {
     public async Task Execute(IJobExecutionContext context)
     {
@@ -37,7 +40,23 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
                                                Func<Application, Participation?> participationSelector,
                                                CancellationToken cancellationToken)
     {
-        var contestParticipants = await client.GetContestParticipantsAsync(stage.YandexContestId, cancellationToken);
+        if (stage.State == ContestStageState.Finished) return;
+
+        var ownerParticipation = await participantServiceClient.GetContestOwnerParticipationAsync(stage.YandexContestId, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        var contestStart = ownerParticipation.ContestStartTime.ToDateTimeOffset();
+        var contestFinish = ownerParticipation.ContestFinishTime.ToDateTimeOffset();
+
+        stage.ContestStart = contestStart;
+        stage.ContestFinish = contestFinish;
+
+        if (stage.State == ContestStageState.NotStarted && now >= stage.ContestStart)
+            await StartContestStageAsync(stage, cancellationToken);
+
+        var contestParticipants = await participantServiceClient.GetContestParticipantsAsync(stage.YandexContestId, cancellationToken);
+
+        var inProgressParticipantsCount = 0;
 
         foreach (var arg in applications.Join(contestParticipants,
                                               application => participationSelector.Invoke(application)?.ContestUserId,
@@ -52,12 +71,37 @@ internal class ParticipationUpdateJob(AppDbContext dbContext, IParticipantServic
             if (participation.State == ParticipationState.Finished) continue;
             if (arg.ContestParticipantInfo.StartTime is null) continue;
 
-            var participantStatus = await client.GetParticipantStatusAsync(stage.YandexContestId, participation.ContestUserId, cancellationToken);
+            var participantStatus = await participantServiceClient.GetParticipantStatusAsync(stage.YandexContestId, participation.ContestUserId, cancellationToken);
 
             participation.Start = participantStatus.StartTime?.ToDateTimeOffset();
             participation.Finish = participantStatus.FinishTime?.ToDateTimeOffset();
             participation.State = participantStatus.State.MapParticipationState();
+            
+            if (participation.State == ParticipationState.InProgress)
+                inProgressParticipantsCount++;
         }
+        
+        if (stage.State == ContestStageState.InProgress && now >= stage.ContestFinish && inProgressParticipantsCount == 0)
+            await FinishContestStageAsync(stage, cancellationToken);
+    }
+
+    private async Task StartContestStageAsync(ContestStage stage, CancellationToken cancellationToken)
+    {
+        stage.State = ContestStageState.InProgress;
+
+        /*
+         * Create a contest in ResultService
+         * Download problems
+         */
+    }
+
+    private async Task FinishContestStageAsync(ContestStage stage, CancellationToken cancellationToken)
+    {
+        stage.State = ContestStageState.Finished;
+
+        /*
+         * Download results
+         */
     }
 }
 
