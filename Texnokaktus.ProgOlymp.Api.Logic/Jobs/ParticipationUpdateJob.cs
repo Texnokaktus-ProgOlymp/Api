@@ -137,7 +137,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
             {
                 await resultServiceClient.AddResultAsync(contestName,
                                                          stageType,
-                                                         problemResult.Problem.Name,
+                                                         problemResult.Problem.Title,
                                                          participantId,
                                                          Convert.ToDecimal(score),
                                                          cancellationToken);
