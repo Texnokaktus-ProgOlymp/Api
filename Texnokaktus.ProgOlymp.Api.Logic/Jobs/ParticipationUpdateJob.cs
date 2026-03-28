@@ -3,6 +3,7 @@ using Quartz;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Entities;
 using Texnokaktus.ProgOlymp.Api.Infrastructure.Clients.Abstractions;
+using Texnokaktus.ProgOlymp.Common.Contracts.Grpc.YandexContest;
 
 namespace Texnokaktus.ProgOlymp.Api.Logic.Jobs;
 
@@ -43,7 +44,7 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
     private async Task UpdateContestStageAsync(string contestName,
                                                Common.Contracts.Grpc.Results.ContestStage stageType,
                                                ContestStage stage,
-                                               IEnumerable<Application> applications,
+                                               ICollection<Application> applications,
                                                Func<Application, Participation?> participationSelector,
                                                CancellationToken cancellationToken)
     {
@@ -87,9 +88,20 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
             if (participation.State == ParticipationState.InProgress)
                 inProgressParticipantsCount++;
         }
-        
+
         if (stage.State == ContestStageState.InProgress && now >= stage.ContestFinish && inProgressParticipantsCount == 0)
-            await FinishContestStageAsync(contestName, stageType, stage, cancellationToken);
+        {
+            var participantIdDictionary = applications.Select(application => new
+                                                       {
+                                                           ApplicationId = application.Id,
+                                                           participationSelector.Invoke(application)?.ContestUserId
+                                                       })
+                                                      .Where(arg => arg.ContestUserId.HasValue)
+                                                      .ToDictionary(arg => arg.ContestUserId!.Value,
+                                                                    arg => arg.ApplicationId);
+
+            await FinishContestStageAsync(contestName, stageType, stage, participantIdDictionary, cancellationToken);
+        }
     }
 
     private async Task StartContestStageAsync(string contestName, Common.Contracts.Grpc.Results.ContestStage stageType, ContestStage stage, CancellationToken cancellationToken)
@@ -102,13 +114,35 @@ internal class ParticipationUpdateJob(AppDbContext dbContext,
             await resultServiceClient.AddProblemAsync(contestName, stageType, problem.Alias, problem.Name, cancellationToken);
     }
 
-    private async Task FinishContestStageAsync(string contestName, Common.Contracts.Grpc.Results.ContestStage stageType,ContestStage stage, CancellationToken cancellationToken)
+    private async Task FinishContestStageAsync(string contestName, Common.Contracts.Grpc.Results.ContestStage stageType, ContestStage stage, IReadOnlyDictionary<long, int> participantIdDictionary, CancellationToken cancellationToken)
     {
         stage.State = ContestStageState.Finished;
 
-        /*
-         * Download results
-         */
+        var standings = await contestDataServiceClient.GetStandingsAsync(stage.YandexContestId, 1, 100, null, cancellationToken);
+
+        foreach (var resultRow in standings.Rows
+                                           .Select(row => new
+                                            {
+                                                row.ParticipantInfo,
+                                                ProblemResults = standings.Titles.Zip(row.ProblemResults,
+                                                                                      (title, result) => new
+                                                                                      {
+                                                                                          Problem = title,
+                                                                                          Result = result
+                                                                                      })
+                                            }))
+        foreach (var problemResult in resultRow.ProblemResults.Where(x => x.Result.Status == SubmissionStatus.Accepted))
+        {
+            if (participantIdDictionary.TryGetValue(resultRow.ParticipantInfo.Id, out var participantId) && problemResult.Result.Score is { } score)
+            {
+                await resultServiceClient.AddResultAsync(contestName,
+                                                         stageType,
+                                                         problemResult.Problem.Name,
+                                                         participantId,
+                                                         Convert.ToDecimal(score),
+                                                         cancellationToken);
+            }
+        }
     }
 }
 
