@@ -9,4 +9,6 @@ public class ContestStage
     public DateTimeOffset? ContestFinish { get; set; }
 
     public TimeSpan Duration { get; set; }
+
+    public ContestStageState State { get; set; }
 }
