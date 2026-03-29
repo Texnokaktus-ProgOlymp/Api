@@ -87,7 +87,7 @@ public class RegistrationService(IContestService contestService,
 
         await context.SaveChangesAsync();
 
-        entity.PreliminaryStageParticipation = await RegisterUserAsync(contest.PreliminaryStage, userLogin, uid.ToString());
+        entity.PreliminaryStageParticipation = await RegisterUserToContestAsync(contest.PreliminaryStage, userLogin, uid.ToString());
 
         await context.SaveChangesAsync();
 
@@ -114,7 +114,7 @@ public class RegistrationService(IContestService contestService,
             }
             : null;
 
-    public async Task QualifyUsersAsync(string contestName, decimal scoreThreshold, CancellationToken cancellationToken)
+    public async Task<IEnumerable<KeyValuePair<Application, DataAccess.Entities.InternalUser>>> QualifyUsersAsync(string contestName, decimal scoreThreshold, CancellationToken cancellationToken)
     {
         if (await contestService.GetContestAsync(contestName) is not { } contest)
             throw new ContestNotFoundException(contestName);
@@ -122,10 +122,14 @@ public class RegistrationService(IContestService contestService,
         if (contest.FinalStage is null)
             throw new InvalidOperationException($"Contest {contest.Name} does not have a final stage.");
 
-        foreach (var (application, internalUser) in await GetUserQualificationList(contest, scoreThreshold, cancellationToken))
-            application.FinalStageParticipation = await RegisterUserAsync(contest.FinalStage, internalUser.Login, null);
-        
+        var qualificationList = (await GetUserQualificationList(contest, scoreThreshold, cancellationToken)).ToArray();
+
+        foreach (var (application, internalUser) in qualificationList)
+            application.FinalStageParticipation = await RegisterUserToContestAsync(contest.FinalStage, internalUser, null);
+
         await context.SaveChangesAsync(cancellationToken);
+
+        return qualificationList.Select(pair => KeyValuePair.Create(pair.Key.MapDomainApplication(), pair.Value));
     }
 
     public async Task<IEnumerable<KeyValuePair<Application, DataAccess.Entities.InternalUser>>> QualifyUsersDryRunAsync(string contestName, decimal scoreThreshold, CancellationToken cancellationToken)
@@ -147,6 +151,8 @@ public class RegistrationService(IContestService contestService,
                                                                        cancellationToken);
 
         var applications = await context.Applications
+                                        .Include(application => application.User)
+                                        .Include(application => application.Region)
                                         .Where(application => application.ContestId == contest.Id)
                                         .ToArrayAsync(cancellationToken);
 
@@ -160,7 +166,9 @@ public class RegistrationService(IContestService contestService,
                                                 .ToArray();
 
         var internalUsers = await context.InternalUsers
+                                         .AsNoTracking()
                                          .Where(user => !user.IsDeprecated)
+                                         .OrderBy(user => user.Id)
                                          .Take(qualifiedParticipants.Length)
                                          .ToArrayAsync(cancellationToken);
 
@@ -169,13 +177,25 @@ public class RegistrationService(IContestService contestService,
                    : throw new InvalidOperationException("Not enough internal users for this contest.");
     }
 
-    private async Task<DataAccess.Entities.Participation> RegisterUserAsync(ContestStage stage, string login, string? displayName)
+    private async Task<DataAccess.Entities.Participation> RegisterUserToContestAsync(ContestStage stage, string login, string? displayName)
     {
         var contestUserId = await registrationServiceClient.RegisterParticipantAsync(stage.Id, login, displayName);
         _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", stage.Id));
         return new()
         {
             ContestUserId = contestUserId,
+            State = DataAccess.Entities.ParticipationState.NotStarted
+        };
+    }
+
+    private async Task<DataAccess.Entities.Participation> RegisterUserToContestAsync(ContestStage stage, DataAccess.Entities.InternalUser internalUser, string? displayName)
+    {
+        var contestUserId = await registrationServiceClient.RegisterParticipantAsync(stage.Id, internalUser.Login, displayName);
+        _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", stage.Id));
+        return new()
+        {
+            ContestUserId = contestUserId,
+            InternalUserId =  internalUser.Id,
             State = DataAccess.Entities.ParticipationState.NotStarted
         };
     }
