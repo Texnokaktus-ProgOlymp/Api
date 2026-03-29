@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
 using Texnokaktus.ProgOlymp.Api.DataAccess.Context;
@@ -13,6 +12,7 @@ namespace Texnokaktus.ProgOlymp.Api.Logic.Services;
 
 public class RegistrationService(IContestService contestService,
                                  IRegistrationServiceClient registrationServiceClient,
+                                 IResultServiceClient resultServiceClient,
                                  TimeProvider timeProvider,
                                  AppDbContext context) : IRegistrationService
 {
@@ -27,6 +27,9 @@ public class RegistrationService(IContestService contestService,
     {
         var contest = await contestService.GetContestAsync(userInsertModel.ContestName)
                    ?? throw new ContestNotFoundException(userInsertModel.ContestName);
+
+        if (contest.PreliminaryStage is null)
+            throw new InvalidOperationException($"Contest {contest.Name} does not have a preliminary stage.");
 
         if (contest.RegistrationState != RegistrationState.InProgress)
             throw new RegistrationClosedException(contest.Name);
@@ -84,11 +87,7 @@ public class RegistrationService(IContestService contestService,
 
         await context.SaveChangesAsync();
 
-        entity.PreliminaryStageParticipation = new()
-        {
-            ContestUserId = await RegisterUserToPreliminaryStageAsync(contest, userLogin, uid.ToString("N")),
-            State = DataAccess.Entities.ParticipationState.NotStarted
-        };
+        entity.PreliminaryStageParticipation = await RegisterUserAsync(contest.PreliminaryStage, userLogin, uid.ToString());
 
         await context.SaveChangesAsync();
 
@@ -115,11 +114,70 @@ public class RegistrationService(IContestService contestService,
             }
             : null;
 
-    private async Task<long> RegisterUserToPreliminaryStageAsync(Contest contest, string login, string? displayName)
+    public async Task QualifyUsersAsync(string contestName, decimal scoreThreshold, CancellationToken cancellationToken)
     {
-        var contestUserId = await registrationServiceClient.RegisterParticipantAsync(contest.PreliminaryStage!.Id, login, displayName);
-        _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", contest.PreliminaryStage.Id));
-        return contestUserId;
+        if (await contestService.GetContestAsync(contestName) is not { } contest)
+            throw new ContestNotFoundException(contestName);
+
+        if (contest.FinalStage is null)
+            throw new InvalidOperationException($"Contest {contest.Name} does not have a final stage.");
+
+        foreach (var (application, internalUser) in await GetUserQualificationList(contest, scoreThreshold, cancellationToken))
+            application.FinalStageParticipation = await RegisterUserAsync(contest.FinalStage, internalUser.Login, null);
+        
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<KeyValuePair<Application, DataAccess.Entities.InternalUser>>> QualifyUsersDryRunAsync(string contestName, decimal scoreThreshold, CancellationToken cancellationToken)
+    {
+        if (await contestService.GetContestAsync(contestName) is not { } contest)
+            throw new ContestNotFoundException(contestName);
+
+        if (contest.FinalStage is null)
+            throw new InvalidOperationException($"Contest {contest.Name} does not have a final stage.");
+
+        return (await GetUserQualificationList(contest, scoreThreshold, cancellationToken))
+           .Select(pair => KeyValuePair.Create(pair.Key.MapDomainApplication(), pair.Value));
+    }
+
+    private async Task<IEnumerable<KeyValuePair<DataAccess.Entities.Application, DataAccess.Entities.InternalUser>>> GetUserQualificationList(Contest contest, decimal scoreThreshold, CancellationToken cancellationToken)
+    {
+        var contestResults = await resultServiceClient.GetResultsAsync(contest.Name,
+                                                                       Common.Contracts.Grpc.Results.ContestStage.Preliminary,
+                                                                       cancellationToken);
+
+        var applications = await context.Applications
+                                        .Where(application => application.ContestId == contest.Id)
+                                        .ToArrayAsync(cancellationToken);
+
+        var qualifiedParticipants = applications.Join(contestResults.ResultGroups
+                                                                    .SelectMany(resultGroup => resultGroup.Rows)
+                                                                    .Where(row => row.TotalScore > scoreThreshold),
+                                                      application => application.Id,
+                                                      resultRow => resultRow.ParticipantId,
+                                                      (application, _) => application)
+                                                .OrderBy(application => application.Created)
+                                                .ToArray();
+
+        var internalUsers = await context.InternalUsers
+                                         .Where(user => !user.IsDeprecated)
+                                         .Take(qualifiedParticipants.Length)
+                                         .ToArrayAsync(cancellationToken);
+
+        return internalUsers.Length >= qualifiedParticipants.Length
+                   ? qualifiedParticipants.Zip(internalUsers, KeyValuePair.Create)
+                   : throw new InvalidOperationException("Not enough internal users for this contest.");
+    }
+
+    private async Task<DataAccess.Entities.Participation> RegisterUserAsync(ContestStage stage, string login, string? displayName)
+    {
+        var contestUserId = await registrationServiceClient.RegisterParticipantAsync(stage.Id, login, displayName);
+        _yandexContestRegisteredUsers.Add(1, KeyValuePair.Create<string, object?>("contestStageId", stage.Id));
+        return new()
+        {
+            ContestUserId = contestUserId,
+            State = DataAccess.Entities.ParticipationState.NotStarted
+        };
     }
 }
 

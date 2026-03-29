@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
     public DbSet<Region> Regions { get; set; }
     public DbSet<Application> Applications { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<InternalUser> InternalUsers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -83,6 +84,36 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
             builder.Property(user => user.Login).IsUnicode(false) /*.HasMaxLength(128)*/;
             builder.Property(user => user.DisplayName).IsUnicode() /*.HasMaxLength(128)*/;
             builder.Property(user => user.DefaultAvatar).IsUnicode(false) /*.HasMaxLength(96)*/;
+        });
+
+        modelBuilder.Entity<InternalUser>(builder =>
+        {
+            builder.HasKey(internalUser => internalUser.Id);
+            builder.HasAlternateKey(internalUser => internalUser.Login);
+
+            builder.Property(internalUser => internalUser.Login).IsUnicode(false);
+            builder.Property(internalUser => internalUser.Password).IsUnicode(false);
+
+            builder.HasData(ReadCsvUsers("/Users/kav128/Downloads/progolymp26-users.csv")
+                               .Select((pair, i) => new InternalUser
+                                {
+                                    Id = i + 1,
+                                    Login = pair.Key,
+                                    Password = pair.Value,
+                                    IsDeprecated = false
+                                }));
+
+            return;
+
+            static IEnumerable<KeyValuePair<string, string>> ReadCsvUsers(string filename)
+            {
+                using var reader = new StreamReader(filename);
+                while (reader.ReadLine() is { } line)
+                {
+                    var strings = line.Split(',');
+                    yield return KeyValuePair.Create(strings[0], strings[1]);
+                }
+            }
         });
 
         base.OnModelCreating(modelBuilder);
