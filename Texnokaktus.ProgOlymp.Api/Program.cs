@@ -101,6 +101,7 @@ app.UseAuthorization();
 
 app.MapGrpcService<ParticipantServiceImpl>();
 app.MapGrpcService<RegistrationDataServiceImpl>();
+app.MapGrpcService<RegistrationServiceImpl>();
 
 app.MapGroup("api")
    .MapUsersEndpoints()
