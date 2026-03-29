@@ -158,7 +158,7 @@ public class RegistrationService(IContestService contestService,
 
         var qualifiedParticipants = applications.Join(contestResults.ResultGroups
                                                                     .SelectMany(resultGroup => resultGroup.Rows)
-                                                                    .Where(row => row.TotalScore > scoreThreshold),
+                                                                    .Where(row => row.TotalScore >= scoreThreshold),
                                                       application => application.Id,
                                                       resultRow => resultRow.ParticipantId,
                                                       (application, _) => application)
