@@ -93,27 +93,6 @@ public class AppDbContext(DbContextOptions options, IDataProtectionProvider data
 
             builder.Property(internalUser => internalUser.Login).IsUnicode(false);
             builder.Property(internalUser => internalUser.Password).IsUnicode(false);
-
-            builder.HasData(ReadCsvUsers("/Users/kav128/Downloads/progolymp26-users.csv")
-                               .Select((pair, i) => new InternalUser
-                                {
-                                    Id = i + 1,
-                                    Login = pair.Key,
-                                    Password = pair.Value,
-                                    IsDeprecated = false
-                                }));
-
-            return;
-
-            static IEnumerable<KeyValuePair<string, string>> ReadCsvUsers(string filename)
-            {
-                using var reader = new StreamReader(filename);
-                while (reader.ReadLine() is { } line)
-                {
-                    var strings = line.Split(',');
-                    yield return KeyValuePair.Create(strings[0], strings[1]);
-                }
-            }
         });
 
         base.OnModelCreating(modelBuilder);
